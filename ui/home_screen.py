@@ -6,6 +6,7 @@ from PySide6.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QLabel
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QFont
 from ui.widgets import Panel, SectionHeader, PlaceholderContent
+from ui.widgets.library_panel import LibraryPanel
 
 
 class HomeScreen(QWidget):
@@ -23,7 +24,8 @@ class HomeScreen(QWidget):
         main_layout.setSpacing(0)
         
         # Left Column - My Library (25%) - #fec5bb
-        self.library_panel = self._create_library_panel()
+        self.library_panel = LibraryPanel()
+        self.library_panel.folder_changed.connect(self._on_folder_changed)
         main_layout.addWidget(self.library_panel, 25)
         
         # Middle Column - Queue (50%) - #f8edeb
@@ -34,19 +36,10 @@ class HomeScreen(QWidget):
         self.playing_panel = self._create_playing_panel()
         main_layout.addWidget(self.playing_panel, 25)
         
-    def _create_library_panel(self) -> Panel:
-        """Create left panel for library."""
-        panel = Panel(title="My Library", background_color="#fec5bb")
-        
-        # Add placeholder content
-        placeholder = PlaceholderContent(
-            "Your music library will appear here.\n\n"
-            "• Playlists\n• Albums\n• Artists\n• Folders"
-        )
-        panel.add_widget(placeholder)
-        panel.add_stretch()
-        
-        return panel
+    def _on_folder_changed(self, folder_path: str) -> None:
+        """Handle music folder selection."""
+        print(f"Music folder selected: {folder_path}")
+        # TODO: Scan folder for music files
         
     def _create_queue_panel(self) -> Panel:
         """Create middle panel for queue with app logo."""

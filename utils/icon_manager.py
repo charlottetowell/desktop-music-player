@@ -6,9 +6,10 @@ from pathlib import Path
 from PySide6.QtGui import QIcon, QPixmap
 from PySide6.QtSvg import QSvgRenderer
 from PySide6.QtCore import QSize, Qt
+import os
 
-# Base icon directory
-ICON_DIR = Path(__file__).parent.parent.parent / "assets" / "icons" / "svg"
+# Base icon directory - use absolute path from this file
+ICON_DIR = Path(__file__).resolve().parent.parent / "assets" / "icons" / "svg"
 
 
 class IconManager:
