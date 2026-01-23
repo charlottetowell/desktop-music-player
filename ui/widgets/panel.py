@@ -15,6 +15,7 @@ class Panel(QWidget):
         super().__init__(parent)
         self._title = title
         self._background_color = background_color
+        self.setAttribute(Qt.WA_StyledBackground, True)
         self._setup_ui()
         
     def _setup_ui(self) -> None:

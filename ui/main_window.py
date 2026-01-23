@@ -140,15 +140,8 @@ class MainWindow(QMainWindow):
         
         main_layout.addWidget(self.content_stack)
         
-        # Main window styling
-        self.setStyleSheet(f"""
-            QMainWindow {{
-                background-color: {BG_PANEL};
-            }}
-            QWidget {{
-                background-color: {BG_PANEL};
-            }}
-        """)
+        # Main window styling - keep minimal to not override panel colors
+        central.setStyleSheet(f"background-color: {BG_PANEL};")
         
     def center_on_screen(self) -> None:
         """Center the main window on the primary display."""

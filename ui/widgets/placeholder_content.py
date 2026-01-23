@@ -14,6 +14,7 @@ class PlaceholderContent(QWidget):
     def __init__(self, text: str = "Content coming soon...", parent: QWidget = None) -> None:
         super().__init__(parent)
         self._text = text
+        self.setAttribute(Qt.WA_StyledBackground, True)
         self._setup_ui()
         
     def _setup_ui(self) -> None:

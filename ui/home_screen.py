@@ -5,7 +5,6 @@ Home screen widget - main 3-column interface
 from PySide6.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QLabel
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QFont
-from ui.themes.colors import BG_SIDEBAR, BG_MAIN, TEXT_PRIMARY
 from ui.widgets import Panel, SectionHeader, PlaceholderContent
 
 
@@ -14,6 +13,7 @@ class HomeScreen(QWidget):
     
     def __init__(self) -> None:
         super().__init__()
+        self.setAttribute(Qt.WA_StyledBackground, True)
         self._setup_ui()
         
     def _setup_ui(self) -> None:
@@ -22,21 +22,21 @@ class HomeScreen(QWidget):
         main_layout.setContentsMargins(0, 0, 0, 0)
         main_layout.setSpacing(0)
         
-        # Left Column - My Library (25%)
+        # Left Column - My Library (25%) - #fec5bb
         self.library_panel = self._create_library_panel()
         main_layout.addWidget(self.library_panel, 25)
         
-        # Middle Column - Queue (50%)
+        # Middle Column - Queue (50%) - #f8edeb
         self.queue_panel = self._create_queue_panel()
         main_layout.addWidget(self.queue_panel, 50)
         
-        # Right Column - Currently Playing (25%)
+        # Right Column - Currently Playing (25%) - #fec5bb
         self.playing_panel = self._create_playing_panel()
         main_layout.addWidget(self.playing_panel, 25)
         
     def _create_library_panel(self) -> Panel:
         """Create left panel for library."""
-        panel = Panel(title="My Library", background_color=BG_SIDEBAR)
+        panel = Panel(title="My Library", background_color="#fec5bb")
         
         # Add placeholder content
         placeholder = PlaceholderContent(
@@ -50,7 +50,7 @@ class HomeScreen(QWidget):
         
     def _create_queue_panel(self) -> Panel:
         """Create middle panel for queue with app logo."""
-        panel = Panel(background_color=BG_MAIN)
+        panel = Panel(background_color="#f8edeb")
         
         # App logo/name at top
         logo_widget = self._create_logo_header()
@@ -73,7 +73,7 @@ class HomeScreen(QWidget):
         
     def _create_playing_panel(self) -> Panel:
         """Create right panel for currently playing track."""
-        panel = Panel(title="Currently Playing", background_color=BG_SIDEBAR)
+        panel = Panel(title="Currently Playing", background_color="#fec5bb")
         
         # Placeholder content
         placeholder = PlaceholderContent(
@@ -88,6 +88,7 @@ class HomeScreen(QWidget):
     def _create_logo_header(self) -> QWidget:
         """Create Peachy Player logo header."""
         header = QWidget()
+        header.setAttribute(Qt.WA_StyledBackground, True)
         header.setFixedHeight(80)
         
         layout = QVBoxLayout(header)
@@ -98,12 +99,12 @@ class HomeScreen(QWidget):
         logo = QLabel("Peachy Player")
         logo.setAlignment(Qt.AlignCenter)
         logo.setFont(QFont("Segoe UI", 24, QFont.Bold))
-        logo.setStyleSheet(f"""
-            QLabel {{
-                color: {TEXT_PRIMARY};
+        logo.setStyleSheet("""
+            QLabel {
+                color: #2b2b2b;
                 background: transparent;
                 letter-spacing: 1px;
-            }}
+            }
         """)
         
         layout.addWidget(logo)
