@@ -1,0 +1,113 @@
+"""
+Loading screen widget with progress indicator
+"""
+
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel, QProgressBar
+from PySide6.QtCore import Qt, QTimer, Signal
+from PySide6.QtGui import QFont
+
+
+class LoadingScreen(QWidget):
+    """Frameless loading screen with progress animation."""
+    
+    loading_complete = Signal()
+    
+    def __init__(self) -> None:
+        super().__init__()
+        self._progress = 0
+        self._setup_ui()
+        self._setup_timer()
+        
+    def _setup_ui(self) -> None:
+        """Initialize UI components."""
+        self.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint)
+        self.setAttribute(Qt.WA_TranslucentBackground)
+        self.setFixedSize(400, 300)
+        
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(40, 60, 40, 60)
+        layout.setSpacing(30)
+        
+        # App title
+        title = QLabel("Desktop Music Player")
+        title.setAlignment(Qt.AlignCenter)
+        title_font = QFont("Segoe UI", 24, QFont.Bold)
+        title.setFont(title_font)
+        title.setStyleSheet("color: #ffffff; background: transparent;")
+        
+        # Loading text
+        self.loading_label = QLabel("Initializing...")
+        self.loading_label.setAlignment(Qt.AlignCenter)
+        loading_font = QFont("Segoe UI", 11)
+        self.loading_label.setFont(loading_font)
+        self.loading_label.setStyleSheet("color: #cccccc; background: transparent;")
+        
+        # Progress bar
+        self.progress_bar = QProgressBar()
+        self.progress_bar.setRange(0, 100)
+        self.progress_bar.setValue(0)
+        self.progress_bar.setTextVisible(False)
+        self.progress_bar.setFixedHeight(4)
+        self.progress_bar.setStyleSheet("""
+            QProgressBar {
+                background-color: rgba(255, 255, 255, 0.1);
+                border-radius: 2px;
+                border: none;
+            }
+            QProgressBar::chunk {
+                background-color: #1db954;
+                border-radius: 2px;
+            }
+        """)
+        
+        layout.addStretch()
+        layout.addWidget(title)
+        layout.addWidget(self.loading_label)
+        layout.addWidget(self.progress_bar)
+        layout.addStretch()
+        
+        # Background styling
+        self.setStyleSheet("""
+            LoadingScreen {
+                background-color: rgba(18, 18, 18, 240);
+                border-radius: 12px;
+            }
+        """)
+        
+    def _setup_timer(self) -> None:
+        """Setup progress simulation timer."""
+        self.timer = QTimer(self)
+        self.timer.timeout.connect(self._update_progress)
+        
+    def start_loading(self) -> None:
+        """Begin loading animation."""
+        self._progress = 0
+        self.progress_bar.setValue(0)
+        self.timer.start(30)  # Update every 30ms
+        
+    def _update_progress(self) -> None:
+        """Update progress bar animation."""
+        self._progress += 2
+        
+        if self._progress <= 30:
+            self.loading_label.setText("Loading audio engine...")
+        elif self._progress <= 60:
+            self.loading_label.setText("Initializing components...")
+        elif self._progress <= 90:
+            self.loading_label.setText("Preparing interface...")
+        else:
+            self.loading_label.setText("Ready!")
+        
+        self.progress_bar.setValue(self._progress)
+        
+        if self._progress >= 100:
+            self.timer.stop()
+            QTimer.singleShot(300, self.loading_complete.emit)
+            
+    def center_on_screen(self) -> None:
+        """Center the loading screen on the primary display."""
+        screen = self.screen().geometry()
+        self.move(
+            screen.center().x() - self.width() // 2,
+            screen.center().y() - self.height() // 2
+        )
