@@ -5,6 +5,7 @@ Main application window with frameless design
 from PySide6.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QStackedWidget
 from PySide6.QtCore import Qt, QPoint
 from PySide6.QtGui import QFont
+from ui.themes.colors import BG_PANEL, TEXT_PRIMARY, BORDER_LIGHT
 
 
 class CustomTitleBar(QWidget):
@@ -24,9 +25,9 @@ class CustomTitleBar(QWidget):
         layout.setSpacing(0)
         
         # App title
-        title = QLabel("Desktop Music Player")
+        title = QLabel("Peachy Player")
         title.setFont(QFont("Segoe UI", 11, QFont.Medium))
-        title.setStyleSheet("color: #ffffff;")
+        title.setStyleSheet(f"color: {TEXT_PRIMARY}; background: transparent;")
         
         # Window controls
         self.minimize_btn = QPushButton("−")
@@ -43,19 +44,20 @@ class CustomTitleBar(QWidget):
         self.close_btn.clicked.connect(self.parent_window.close)
         
         # Styling
-        button_style = """
-            QPushButton {
+        button_style = f"""
+            QPushButton {{
                 background-color: transparent;
-                color: #ffffff;
+                color: {TEXT_PRIMARY};
                 border: none;
-            }
-            QPushButton:hover {
-                background-color: rgba(255, 255, 255, 0.1);
-            }
+            }}
+            QPushButton:hover {{
+                background-color: rgba(0, 0, 0, 0.05);
+            }}
         """
         close_style = button_style + """
             QPushButton:hover {
-                background-color: #e81123;
+                background-color: #e57373;
+                color: #ffffff;
             }
         """
         
@@ -69,11 +71,11 @@ class CustomTitleBar(QWidget):
         layout.addWidget(self.maximize_btn)
         layout.addWidget(self.close_btn)
         
-        self.setStyleSheet("""
-            CustomTitleBar {
-                background-color: #181818;
-                border-bottom: 1px solid #282828;
-            }
+        self.setStyleSheet(f"""
+            CustomTitleBar {{
+                background-color: {BG_PANEL};
+                border-bottom: 1px solid {BORDER_LIGHT};
+            }}
         """)
         
     def _toggle_maximize(self) -> None:
@@ -106,7 +108,7 @@ class MainWindow(QMainWindow):
         
     def _setup_window(self) -> None:
         """Configure window properties."""
-        self.setWindowTitle("Desktop Music Player")
+        self.setWindowTitle("Peachy Player")
         self.setMinimumSize(900, 600)
         self.resize(1200, 800)
         
@@ -139,13 +141,13 @@ class MainWindow(QMainWindow):
         main_layout.addWidget(self.content_stack)
         
         # Main window styling
-        self.setStyleSheet("""
-            QMainWindow {
-                background-color: #121212;
-            }
-            QWidget {
-                background-color: #121212;
-            }
+        self.setStyleSheet(f"""
+            QMainWindow {{
+                background-color: {BG_PANEL};
+            }}
+            QWidget {{
+                background-color: {BG_PANEL};
+            }}
         """)
         
     def center_on_screen(self) -> None:

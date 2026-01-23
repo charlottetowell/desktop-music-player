@@ -5,6 +5,7 @@ Loading screen widget with progress indicator
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel, QProgressBar
 from PySide6.QtCore import Qt, QTimer, Signal
 from PySide6.QtGui import QFont
+from ui.themes.colors import PRIMARY_PEACH, TEXT_PRIMARY, TEXT_SECONDARY, BG_PANEL
 
 
 class LoadingScreen(QWidget):
@@ -29,18 +30,18 @@ class LoadingScreen(QWidget):
         layout.setSpacing(30)
         
         # App title
-        title = QLabel("Desktop Music Player")
+        title = QLabel("Peachy Player")
         title.setAlignment(Qt.AlignCenter)
         title_font = QFont("Segoe UI", 24, QFont.Bold)
         title.setFont(title_font)
-        title.setStyleSheet("color: #ffffff; background: transparent;")
+        title.setStyleSheet(f"color: {TEXT_PRIMARY}; background: transparent;")
         
         # Loading text
         self.loading_label = QLabel("Initializing...")
         self.loading_label.setAlignment(Qt.AlignCenter)
         loading_font = QFont("Segoe UI", 11)
         self.loading_label.setFont(loading_font)
-        self.loading_label.setStyleSheet("color: #cccccc; background: transparent;")
+        self.loading_label.setStyleSheet(f"color: {TEXT_SECONDARY}; background: transparent;")
         
         # Progress bar
         self.progress_bar = QProgressBar()
@@ -48,16 +49,16 @@ class LoadingScreen(QWidget):
         self.progress_bar.setValue(0)
         self.progress_bar.setTextVisible(False)
         self.progress_bar.setFixedHeight(4)
-        self.progress_bar.setStyleSheet("""
-            QProgressBar {
-                background-color: rgba(255, 255, 255, 0.1);
+        self.progress_bar.setStyleSheet(f"""
+            QProgressBar {{
+                background-color: rgba(0, 0, 0, 0.08);
                 border-radius: 2px;
                 border: none;
-            }
-            QProgressBar::chunk {
-                background-color: #1db954;
+            }}
+            QProgressBar::chunk {{
+                background-color: {PRIMARY_PEACH};
                 border-radius: 2px;
-            }
+            }}
         """)
         
         layout.addStretch()
@@ -67,11 +68,11 @@ class LoadingScreen(QWidget):
         layout.addStretch()
         
         # Background styling
-        self.setStyleSheet("""
-            LoadingScreen {
-                background-color: rgba(18, 18, 18, 240);
+        self.setStyleSheet(f"""
+            LoadingScreen {{
+                background-color: {BG_PANEL};
                 border-radius: 12px;
-            }
+            }}
         """)
         
     def _setup_timer(self) -> None:

@@ -1,77 +1,113 @@
 """
-Home screen widget - placeholder for main interface
+Home screen widget - main 3-column interface
 """
 
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel, QPushButton
+from PySide6.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QLabel
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QFont
+from ui.themes.colors import BG_SIDEBAR, BG_MAIN, TEXT_PRIMARY
+from ui.widgets import Panel, SectionHeader, PlaceholderContent
 
 
 class HomeScreen(QWidget):
-    """Simple home screen placeholder."""
+    """Main 3-column layout: Library | Queue | Now Playing."""
     
     def __init__(self) -> None:
         super().__init__()
         self._setup_ui()
         
     def _setup_ui(self) -> None:
-        """Initialize UI components."""
-        layout = QVBoxLayout(self)
-        layout.setContentsMargins(60, 60, 60, 60)
-        layout.setSpacing(30)
+        """Initialize main 3-column layout."""
+        main_layout = QHBoxLayout(self)
+        main_layout.setContentsMargins(0, 0, 0, 0)
+        main_layout.setSpacing(0)
         
-        # Welcome message
-        welcome = QLabel("Welcome to Desktop Music Player")
-        welcome.setAlignment(Qt.AlignCenter)
-        welcome_font = QFont("Segoe UI", 28, QFont.Bold)
-        welcome.setFont(welcome_font)
-        welcome.setStyleSheet("color: #ffffff;")
+        # Left Column - My Library (25%)
+        self.library_panel = self._create_library_panel()
+        main_layout.addWidget(self.library_panel, 25)
         
-        # Subtitle
-        subtitle = QLabel("Your audio library at your fingertips")
-        subtitle.setAlignment(Qt.AlignCenter)
-        subtitle_font = QFont("Segoe UI", 13)
-        subtitle.setFont(subtitle_font)
-        subtitle.setStyleSheet("color: #b3b3b3;")
+        # Middle Column - Queue (50%)
+        self.queue_panel = self._create_queue_panel()
+        main_layout.addWidget(self.queue_panel, 50)
         
-        # Placeholder button
-        start_button = QPushButton("Get Started")
-        start_button.setFixedSize(180, 50)
-        start_button.setCursor(Qt.PointingHandCursor)
-        start_button.setFont(QFont("Segoe UI", 12, QFont.Medium))
-        start_button.setStyleSheet("""
-            QPushButton {
-                background-color: #1db954;
-                color: #ffffff;
-                border: none;
-                border-radius: 25px;
-                padding: 12px 24px;
-            }
-            QPushButton:hover {
-                background-color: #1ed760;
-            }
-            QPushButton:pressed {
-                background-color: #1aa34a;
-            }
+        # Right Column - Currently Playing (25%)
+        self.playing_panel = self._create_playing_panel()
+        main_layout.addWidget(self.playing_panel, 25)
+        
+    def _create_library_panel(self) -> Panel:
+        """Create left panel for library."""
+        panel = Panel(title="My Library", background_color=BG_SIDEBAR)
+        
+        # Add placeholder content
+        placeholder = PlaceholderContent(
+            "Your music library will appear here.\n\n"
+            "• Playlists\n• Albums\n• Artists\n• Folders"
+        )
+        panel.add_widget(placeholder)
+        panel.add_stretch()
+        
+        return panel
+        
+    def _create_queue_panel(self) -> Panel:
+        """Create middle panel for queue with app logo."""
+        panel = Panel(background_color=BG_MAIN)
+        
+        # App logo/name at top
+        logo_widget = self._create_logo_header()
+        panel.content_layout.setContentsMargins(0, 0, 0, 24)
+        panel.main_layout.insertWidget(0, logo_widget)
+        
+        # Queue header
+        queue_header = SectionHeader("Queue", "0 tracks")
+        panel.add_widget(queue_header)
+        
+        # Placeholder content
+        placeholder = PlaceholderContent(
+            "Your playback queue will appear here.\n\n"
+            "Add tracks from your library to start playing."
+        )
+        panel.add_widget(placeholder)
+        panel.add_stretch()
+        
+        return panel
+        
+    def _create_playing_panel(self) -> Panel:
+        """Create right panel for currently playing track."""
+        panel = Panel(title="Currently Playing", background_color=BG_SIDEBAR)
+        
+        # Placeholder content
+        placeholder = PlaceholderContent(
+            "Track information and controls will appear here.\n\n"
+            "• Album artwork\n• Track details\n• Playback controls\n• Volume control"
+        )
+        panel.add_widget(placeholder)
+        panel.add_stretch()
+        
+        return panel
+        
+    def _create_logo_header(self) -> QWidget:
+        """Create Peachy Player logo header."""
+        header = QWidget()
+        header.setFixedHeight(80)
+        
+        layout = QVBoxLayout(header)
+        layout.setContentsMargins(0, 20, 0, 20)
+        layout.setAlignment(Qt.AlignCenter)
+        
+        # App name
+        logo = QLabel("Peachy Player")
+        logo.setAlignment(Qt.AlignCenter)
+        logo.setFont(QFont("Segoe UI", 24, QFont.Bold))
+        logo.setStyleSheet(f"""
+            QLabel {{
+                color: {TEXT_PRIMARY};
+                background: transparent;
+                letter-spacing: 1px;
+            }}
         """)
         
-        # Status label
-        status = QLabel("This is a placeholder home screen.\nUI components will be implemented here.")
-        status.setAlignment(Qt.AlignCenter)
-        status_font = QFont("Segoe UI", 10)
-        status.setFont(status_font)
-        status.setStyleSheet("color: #808080;")
+        layout.addWidget(logo)
         
-        layout.addStretch(2)
-        layout.addWidget(welcome)
-        layout.addWidget(subtitle)
-        layout.addSpacing(40)
+        header.setStyleSheet("QWidget { background: transparent; }")
         
-        # Center the button
-        button_layout = QVBoxLayout()
-        button_layout.addWidget(start_button, alignment=Qt.AlignCenter)
-        layout.addLayout(button_layout)
-        
-        layout.addSpacing(20)
-        layout.addWidget(status)
-        layout.addStretch(3)
+        return header
