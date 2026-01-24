@@ -37,6 +37,7 @@ class LibraryPanel(QWidget):
     folder_changed = Signal(str)
     track_selected = Signal(AudioTrack)
     track_double_clicked = Signal(AudioTrack)
+    album_add_requested = Signal(list)  # Emits list of AudioTrack
     
     def __init__(self, parent: QWidget = None) -> None:
         super().__init__(parent)
@@ -72,6 +73,7 @@ class LibraryPanel(QWidget):
         self.track_list = TrackListWidget()
         self.track_list.track_selected.connect(self.track_selected.emit)
         self.track_list.track_double_clicked.connect(self.track_double_clicked.emit)
+        self.track_list.album_add_requested.connect(self.album_add_requested.emit)
         layout.addWidget(self.track_list, 1)
         
         self.setStyleSheet("LibraryPanel { background-color: #fec5bb; }")

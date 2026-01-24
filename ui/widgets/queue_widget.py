@@ -118,7 +118,7 @@ class QueueTrackWidget(QFrame):
         pixmap.fill(Qt.transparent)
         painter = QPainter(pixmap)
         painter.setOpacity(0.7)
-        self.render(painter)
+        self.render(painter, QPoint())
         painter.end()
         drag.setPixmap(pixmap)
         drag.setHotSpot(event.pos())
@@ -318,20 +318,39 @@ class QueueWidget(QWidget):
             self._show_empty_state()
             return
             
-        # Group tracks by album
+        # Group adjacent tracks by album
         current_index = self.queue_manager.get_current_index()
-        album_tracks: Dict[str, List[tuple[AudioTrack, int]]] = {}
+        album_groups: List[tuple[str, str, List[tuple[AudioTrack, int]]]] = []
+        
+        current_group_key = None
+        current_group_name = None
+        current_group_artist = None
+        current_group_tracks = []
         
         for idx, track in enumerate(queue):
             album_key = f"{track.album}|{track.artist}"
-            if album_key not in album_tracks:
-                album_tracks[album_key] = []
-            album_tracks[album_key].append((track, idx))
+            
+            # Start new group if album changes or first track
+            if album_key != current_group_key:
+                # Save previous group if it exists
+                if current_group_tracks:
+                    album_groups.append((current_group_name, current_group_artist, current_group_tracks))
+                
+                # Start new group
+                current_group_key = album_key
+                current_group_name = track.album
+                current_group_artist = track.artist
+                current_group_tracks = [(track, idx)]
+            else:
+                # Add to current group
+                current_group_tracks.append((track, idx))
+        
+        # Don't forget the last group
+        if current_group_tracks:
+            album_groups.append((current_group_name, current_group_artist, current_group_tracks))
             
         # Create album group widgets
-        for album_key, tracks in album_tracks.items():
-            album_name, artist_name = album_key.split("|")
-            
+        for album_name, artist_name, tracks in album_groups:
             # Get album art from first track in album
             album_art_pixmap = None
             if tracks[0][0].album_art_data:
@@ -348,6 +367,7 @@ class QueueWidget(QWidget):
                 track_widget.drag_started.connect(self._on_drag_started)
                 album_group.add_track_widget(track_widget)
                 
+            album_key = f"{album_name}|{artist_name}"
             self.album_groups[album_key] = album_group
             self.content_layout.insertWidget(self.content_layout.count() - 1, album_group)
             
@@ -383,18 +403,58 @@ class QueueWidget(QWidget):
         return None
         
     def dragEnterEvent(self, event) -> None:
-        """Handle drag enter for reordering."""
-        if event.mimeData().hasText():
+        """Handle drag enter for reordering and adding from library."""
+        if (event.mimeData().hasText() or 
+            event.mimeData().hasFormat("application/x-audiotrack") or
+            event.mimeData().hasFormat("application/x-audiotrack-list")):
             event.acceptProposedAction()
             
     def dragMoveEvent(self, event) -> None:
         """Handle drag move."""
-        if event.mimeData().hasText():
+        if (event.mimeData().hasText() or 
+            event.mimeData().hasFormat("application/x-audiotrack") or
+            event.mimeData().hasFormat("application/x-audiotrack-list")):
             event.acceptProposedAction()
             
     def dropEvent(self, event) -> None:
-        """Handle drop for reordering tracks."""
-        if event.mimeData().hasText() and self._drag_source_index is not None:
+        """Handle drop for reordering tracks or adding from library."""
+        mime_data = event.mimeData()
+        
+        # Handle adding single track from library
+        if mime_data.hasFormat("application/x-audiotrack"):
+            import pickle
+            try:
+                track_data = bytes(mime_data.data("application/x-audiotrack"))
+                track = pickle.loads(track_data)
+                self.queue_manager.add_track(track)
+                # If first track, set as current
+                if self.queue_manager.size() == 1:
+                    self.queue_manager.set_current_index(0)
+                event.acceptProposedAction()
+                print(f"Added track to queue: {track.title}")
+                return
+            except Exception as e:
+                print(f"Error adding track: {e}")
+                
+        # Handle adding album/multiple tracks from library
+        if mime_data.hasFormat("application/x-audiotrack-list"):
+            import pickle
+            try:
+                tracks_data = bytes(mime_data.data("application/x-audiotrack-list"))
+                tracks = pickle.loads(tracks_data)
+                was_empty = self.queue_manager.is_empty()
+                self.queue_manager.add_tracks(tracks)
+                # If was empty, set first track as current
+                if was_empty:
+                    self.queue_manager.set_current_index(0)
+                event.acceptProposedAction()
+                print(f"Added {len(tracks)} tracks to queue")
+                return
+            except Exception as e:
+                print(f"Error adding tracks: {e}")
+        
+        # Handle reordering within queue
+        if mime_data.hasText() and self._drag_source_index is not None:
             # Find drop position
             drop_pos = event.position().toPoint()
             target_widget = self.childAt(drop_pos)

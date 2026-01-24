@@ -6,7 +6,7 @@ from typing import List, Dict, Optional
 import re
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QPushButton, 
                                QScrollArea, QLabel, QFrame, QLineEdit)
-from PySide6.QtCore import Qt, Signal, QTimer
+from PySide6.QtCore import Qt, Signal, QTimer, QPoint, QMimeData
 from PySide6.QtGui import QFont
 from ui.themes.colors import TEXT_PRIMARY, TEXT_SECONDARY, ACCENT_HOVER
 from core.audio_scanner import AudioTrack
@@ -65,6 +65,7 @@ class TrackItemWidget(QFrame):
     def __init__(self, track: AudioTrack, parent: QWidget = None) -> None:
         super().__init__(parent)
         self.track = track
+        self._drag_start_pos = QPoint()
         self.setAttribute(Qt.WA_StyledBackground, True)
         self._setup_ui()
         
@@ -79,7 +80,7 @@ class TrackItemWidget(QFrame):
         title.setFont(QFont("Segoe UI", 10))
         title.setStyleSheet(f"color: {TEXT_PRIMARY}; background: transparent;")
         title.setWordWrap(False)
-        title.setTextInteractionFlags(Qt.TextSelectableByMouse)
+        title.setTextInteractionFlags(Qt.NoTextInteraction)  # Prevent text selection
         
         # Artist - Album info
         info = QLabel(f"{self.track.artist}")
@@ -102,10 +103,45 @@ class TrackItemWidget(QFrame):
         self.setCursor(Qt.PointingHandCursor)
         
     def mousePressEvent(self, event) -> None:
-        """Handle track click."""
+        """Handle track click and start drag."""
         if event.button() == Qt.LeftButton:
+            self._drag_start_pos = event.pos()
             self.track_clicked.emit(self.track)
         super().mousePressEvent(event)
+        
+    def mouseMoveEvent(self, event) -> None:
+        """Handle mouse move for drag initiation."""
+        if not (event.buttons() & Qt.LeftButton):
+            return
+            
+        if (event.pos() - self._drag_start_pos).manhattanLength() < 10:
+            return
+            
+        # Start drag operation
+        from PySide6.QtCore import QByteArray
+        from PySide6.QtGui import QDrag
+        import pickle
+        
+        drag = QDrag(self)
+        mime_data = QMimeData()
+        
+        # Serialize the track to pass it
+        track_data = pickle.dumps(self.track)
+        mime_data.setData("application/x-audiotrack", QByteArray(track_data))
+        drag.setMimeData(mime_data)
+        
+        # Create drag pixmap
+        from PySide6.QtGui import QPixmap, QPainter
+        pixmap = QPixmap(self.size())
+        pixmap.fill(Qt.transparent)
+        painter = QPainter(pixmap)
+        painter.setOpacity(0.7)
+        self.render(painter, QPoint())
+        painter.end()
+        drag.setPixmap(pixmap)
+        drag.setHotSpot(event.pos())
+        
+        drag.exec(Qt.CopyAction)
         
     def mouseDoubleClickEvent(self, event) -> None:
         """Handle track double-click."""
@@ -117,8 +153,14 @@ class TrackItemWidget(QFrame):
 class GroupHeaderWidget(QFrame):
     """Header widget for track groups."""
     
-    def __init__(self, group_name: str, track_count: int, parent: QWidget = None) -> None:
+    add_album_clicked = Signal(str, str)  # Emits (album_name, artist_name)
+    
+    def __init__(self, group_name: str, track_count: int, tracks: List[AudioTrack] = None, parent: QWidget = None) -> None:
         super().__init__(parent)
+        self.group_name = group_name
+        self.track_count = track_count
+        self.tracks = tracks or []
+        self._drag_start_pos = QPoint()
         self.setAttribute(Qt.WA_StyledBackground, True)
         self._setup_ui(group_name, track_count)
         
@@ -137,11 +179,73 @@ class GroupHeaderWidget(QFrame):
         count_label.setFont(QFont("Segoe UI", 9))
         count_label.setStyleSheet(f"color: {TEXT_SECONDARY}; background: transparent;")
         
+        # Add album button
+        add_btn = QPushButton("+ Add Album")
+        add_btn.setFixedHeight(24)
+        add_btn.setFont(QFont("Segoe UI", 9))
+        add_btn.setCursor(Qt.PointingHandCursor)
+        add_btn.setStyleSheet(f"""
+            QPushButton {{
+                background-color: rgba(0, 0, 0, 0.1);
+                color: {TEXT_PRIMARY};
+                border: none;
+                border-radius: 4px;
+                padding: 4px 12px;
+            }}
+            QPushButton:hover {{
+                background-color: {ACCENT_HOVER};
+            }}
+        """)
+        add_btn.clicked.connect(lambda: self.add_album_clicked.emit(self.group_name, ""))
+        
         layout.addWidget(name_label)
-        layout.addStretch()
         layout.addWidget(count_label)
+        layout.addStretch()
+        layout.addWidget(add_btn)
         
         self.setStyleSheet("GroupHeaderWidget { background: transparent; }")
+        
+    def mousePressEvent(self, event) -> None:
+        """Handle mouse press for dragging."""
+        if event.button() == Qt.LeftButton:
+            self._drag_start_pos = event.pos()
+        super().mousePressEvent(event)
+        
+    def mouseMoveEvent(self, event) -> None:
+        """Handle mouse move for drag initiation of full album."""
+        if not (event.buttons() & Qt.LeftButton):
+            return
+            
+        if (event.pos() - self._drag_start_pos).manhattanLength() < 10:
+            return
+        
+        if not self.tracks:
+            return
+            
+        # Start drag operation
+        from PySide6.QtCore import QByteArray
+        from PySide6.QtGui import QDrag, QPixmap, QPainter
+        import pickle
+        
+        drag = QDrag(self)
+        mime_data = QMimeData()
+        
+        # Serialize all tracks
+        tracks_data = pickle.dumps(self.tracks)
+        mime_data.setData("application/x-audiotrack-list", QByteArray(tracks_data))
+        drag.setMimeData(mime_data)
+        
+        # Create drag pixmap
+        pixmap = QPixmap(self.size())
+        pixmap.fill(Qt.transparent)
+        painter = QPainter(pixmap)
+        painter.setOpacity(0.7)
+        self.render(painter, QPoint())
+        painter.end()
+        drag.setPixmap(pixmap)
+        drag.setHotSpot(event.pos())
+        
+        drag.exec(Qt.CopyAction)
 
 
 class TrackListWidget(QWidget):
@@ -152,6 +256,7 @@ class TrackListWidget(QWidget):
     
     track_selected = Signal(AudioTrack)
     track_double_clicked = Signal(AudioTrack)
+    album_add_requested = Signal(list)  # Emits list of AudioTrack
     
     def __init__(self, parent: QWidget = None) -> None:
         super().__init__(parent)
@@ -159,6 +264,7 @@ class TrackListWidget(QWidget):
         self.current_group_mode = "album"
         self.tracks: List[AudioTrack] = []
         self.search_query: str = ""
+        self.current_groups: Dict[str, List[AudioTrack]] = {}  # Store current grouped tracks
         self._setup_ui()
         
     def _setup_ui(self) -> None:
@@ -346,11 +452,15 @@ class TrackListWidget(QWidget):
             groups = scanner.group_by_year()
         else:  # folder
             groups = scanner.group_by_folder()
+        
+        # Store current groups for album addition
+        self.current_groups = groups
             
         # Display grouped tracks
         for group_name, group_tracks in groups.items():
             # Add group header
-            header = GroupHeaderWidget(group_name, len(group_tracks))
+            header = GroupHeaderWidget(group_name, len(group_tracks), group_tracks)
+            header.add_album_clicked.connect(lambda gn=group_name: self._on_add_album(gn))
             self.content_layout.insertWidget(self.content_layout.count() - 1, header)
             
             # Add tracks in group
@@ -412,3 +522,10 @@ class TrackListWidget(QWidget):
         no_results.setStyleSheet(f"color: {TEXT_SECONDARY}; background: transparent; padding: 40px;")
         no_results.setWordWrap(True)
         self.content_layout.insertWidget(0, no_results)
+        
+    def _on_add_album(self, group_name: str) -> None:
+        """Handle add album button click."""
+        if group_name in self.current_groups:
+            tracks = self.current_groups[group_name]
+            self.album_add_requested.emit(tracks)
+            print(f"Adding {len(tracks)} tracks from group: {group_name}")

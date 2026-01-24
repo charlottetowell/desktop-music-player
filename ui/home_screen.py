@@ -31,6 +31,7 @@ class HomeScreen(QWidget):
         self.library_panel.folder_changed.connect(self._on_folder_changed)
         self.library_panel.track_selected.connect(self._on_track_selected)
         self.library_panel.track_double_clicked.connect(self._on_track_double_clicked)
+        self.library_panel.album_add_requested.connect(self._on_album_add_requested)
         main_layout.addWidget(self.library_panel, 25)
         
         # Middle Column - Queue (50%) - #f8edeb
@@ -56,6 +57,15 @@ class HomeScreen(QWidget):
         # If this is the first track, set it as current
         if self.queue_manager.size() == 1:
             self.queue_manager.set_current_index(0)
+            
+    def _on_album_add_requested(self, tracks: list) -> None:
+        """Handle album addition from library."""
+        if tracks:
+            print(f"Adding album with {len(tracks)} tracks to queue")
+            self.queue_manager.add_tracks(tracks)
+            # If this is the first content, set first track as current
+            if self.queue_manager.size() == len(tracks):
+                self.queue_manager.set_current_index(0)
         
     def _create_queue_panel(self) -> Panel:
         """Create middle panel for queue with app logo."""
