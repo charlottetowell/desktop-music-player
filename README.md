@@ -6,6 +6,11 @@ A cross-platform desktop audio player with real-time visualization, built with P
 
 - **Cross-Platform**: Windows & Linux support
 - **Modern UI**: Frameless, transparent window with custom title bar
+- **Queue Management**: Add tracks by double-clicking or dragging from library
+  - Album-grouped display with cover art
+  - Drag-and-drop reordering within queue
+  - Manual track removal
+  - Visual highlighting of currently playing track
 - **Mini Mode**: Dockable, always-on-top widgets
 - **Real-Time Visualization**: FFT-based audio visualization using numpy
 - **MVVM Architecture**: Clean separation between audio engine and UI
@@ -70,6 +75,7 @@ python main.py
 
 - **PySide6**: Qt framework for Python
 - **numpy**: Fast array operations for DSP
+- **mutagen**: Audio metadata extraction and album art
 - **miniaudio** or **pygame**: Audio playback backend
 
 Install all dependencies via:

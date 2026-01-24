@@ -60,6 +60,7 @@ class TrackItemWidget(QFrame):
     """Widget representing a single track in the list."""
     
     track_clicked = Signal(AudioTrack)
+    track_double_clicked = Signal(AudioTrack)
     
     def __init__(self, track: AudioTrack, parent: QWidget = None) -> None:
         super().__init__(parent)
@@ -105,6 +106,12 @@ class TrackItemWidget(QFrame):
         if event.button() == Qt.LeftButton:
             self.track_clicked.emit(self.track)
         super().mousePressEvent(event)
+        
+    def mouseDoubleClickEvent(self, event) -> None:
+        """Handle track double-click."""
+        if event.button() == Qt.LeftButton:
+            self.track_double_clicked.emit(self.track)
+        super().mouseDoubleClickEvent(event)
 
 
 class GroupHeaderWidget(QFrame):
@@ -144,6 +151,7 @@ class TrackListWidget(QWidget):
     """
     
     track_selected = Signal(AudioTrack)
+    track_double_clicked = Signal(AudioTrack)
     
     def __init__(self, parent: QWidget = None) -> None:
         super().__init__(parent)
@@ -349,6 +357,7 @@ class TrackListWidget(QWidget):
             for track in group_tracks:
                 track_widget = TrackItemWidget(track)
                 track_widget.track_clicked.connect(self.track_selected.emit)
+                track_widget.track_double_clicked.connect(self.track_double_clicked.emit)
                 self.content_layout.insertWidget(self.content_layout.count() - 1, track_widget)
                 
     def _normalize_text(self, text: str) -> str:

@@ -26,6 +26,7 @@ class AudioTrack:
     duration: float = 0.0
     file_size: int = 0
     format: str = "unknown"
+    album_art_data: Optional[bytes] = None  # Raw album art image data
     
     def __post_init__(self):
         if isinstance(self.file_path, str):
@@ -103,6 +104,9 @@ class AudioScanner:
                         pass
             else:
                 track.title = file_path.stem
+            
+            # Extract album art
+            track.album_art_data = self._extract_album_art(file_path)
                 
             return track
             
@@ -120,6 +124,46 @@ class AudioScanner:
         except:
             return default
             
+    def _extract_album_art(self, file_path: Path) -> Optional[bytes]:
+        """Extract album art from audio file."""
+        try:
+            # Load file without easy mode to access raw tags
+            audio = MutagenFile(str(file_path))
+            if audio is None:
+                return None
+            
+            # Handle different file formats
+            if isinstance(audio, MP3):
+                # MP3 ID3 tags
+                from mutagen.id3 import APIC
+                for tag in audio.tags.values() if audio.tags else []:
+                    if isinstance(tag, APIC):
+                        return tag.data
+                        
+            elif isinstance(audio, FLAC):
+                # FLAC pictures
+                if audio.pictures:
+                    return audio.pictures[0].data
+                    
+            elif isinstance(audio, MP4):
+                # MP4/M4A cover art
+                if 'covr' in audio.tags:
+                    return bytes(audio.tags['covr'][0])
+                    
+            elif isinstance(audio, OggVorbis):
+                # OGG Vorbis pictures (base64 encoded)
+                if 'metadata_block_picture' in audio.tags:
+                    import base64
+                    from mutagen.flac import Picture
+                    pic_data = base64.b64decode(audio.tags['metadata_block_picture'][0])
+                    picture = Picture(pic_data)
+                    return picture.data
+                    
+        except Exception as e:
+            print(f"Could not extract album art from {file_path}: {e}")
+            
+        return None
+    
     def _create_fallback_track(self, file_path: Path) -> AudioTrack:
         """Create track with minimal info when metadata extraction fails."""
         return AudioTrack(
