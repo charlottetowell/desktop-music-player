@@ -26,6 +26,7 @@ class HomeScreen(QWidget):
         # Left Column - My Library (25%) - #fec5bb
         self.library_panel = LibraryPanel()
         self.library_panel.folder_changed.connect(self._on_folder_changed)
+        self.library_panel.track_selected.connect(self._on_track_selected)
         main_layout.addWidget(self.library_panel, 25)
         
         # Middle Column - Queue (50%) - #f8edeb
@@ -39,7 +40,11 @@ class HomeScreen(QWidget):
     def _on_folder_changed(self, folder_path: str) -> None:
         """Handle music folder selection."""
         print(f"Music folder selected: {folder_path}")
-        # TODO: Scan folder for music files
+        
+    def _on_track_selected(self, track) -> None:
+        """Handle track selection from library."""
+        print(f"Track selected: {track.title} by {track.artist}")
+        # TODO: Add to queue and start playback
         
     def _create_queue_panel(self) -> Panel:
         """Create middle panel for queue with app logo."""
