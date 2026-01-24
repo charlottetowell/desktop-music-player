@@ -3,8 +3,9 @@ Track list widget with grouping controls
 """
 
 from typing import List, Dict, Optional
+import re
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QPushButton, 
-                               QScrollArea, QLabel, QFrame)
+                               QScrollArea, QLabel, QFrame, QLineEdit)
 from PySide6.QtCore import Qt, Signal, QTimer
 from PySide6.QtGui import QFont
 from ui.themes.colors import TEXT_PRIMARY, TEXT_SECONDARY, ACCENT_HOVER
@@ -138,7 +139,7 @@ class GroupHeaderWidget(QFrame):
 
 class TrackListWidget(QWidget):
     """
-    Track list with grouping controls.
+    Track list with grouping controls and search.
     Displays tracks grouped by Album, Artist, Year, or Folder.
     """
     
@@ -149,6 +150,7 @@ class TrackListWidget(QWidget):
         self.setAttribute(Qt.WA_StyledBackground, True)
         self.current_group_mode = "album"
         self.tracks: List[AudioTrack] = []
+        self.search_query: str = ""
         self._setup_ui()
         
     def _setup_ui(self) -> None:
@@ -156,6 +158,10 @@ class TrackListWidget(QWidget):
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
+        
+        # Search bar
+        search_container = self._create_search_bar()
+        layout.addWidget(search_container)
         
         # Group buttons
         button_container = self._create_group_buttons()
@@ -202,6 +208,49 @@ class TrackListWidget(QWidget):
                 height: 0px;
             }
         """)
+        
+    def _create_search_bar(self) -> QWidget:
+        """Create search bar widget."""
+        container = QWidget()
+        container.setAttribute(Qt.WA_StyledBackground, True)
+        container.setStyleSheet("background: transparent;")
+        
+        layout = QHBoxLayout(container)
+        layout.setContentsMargins(12, 12, 12, 8)
+        
+        # Search input
+        self.search_input = QLineEdit()
+        self.search_input.setPlaceholderText("Search tracks, artists, albums...")
+        self.search_input.setFont(QFont("Segoe UI", 10))
+        self.search_input.setFixedHeight(36)
+        self.search_input.textChanged.connect(self._on_search_changed)
+        self.search_input.setClearButtonEnabled(True)
+        
+        self.search_input.setStyleSheet(f"""
+            QLineEdit {{
+                background-color: rgba(255, 255, 255, 0.5);
+                color: {TEXT_PRIMARY};
+                border: 2px solid rgba(0, 0, 0, 0.1);
+                border-radius: 18px;
+                padding: 6px 16px;
+            }}
+            QLineEdit:focus {{
+                background-color: rgba(255, 255, 255, 0.7);
+                border-color: rgba(0, 0, 0, 0.2);
+            }}
+            QLineEdit::placeholder {{
+                color: {TEXT_SECONDARY};
+            }}
+        """)
+        
+        layout.addWidget(self.search_input)
+        
+        return container
+        
+    def _on_search_changed(self, text: str) -> None:
+        """Handle search text changes."""
+        self.search_query = text.lower().strip()
+        self._refresh_display()
         
     def _create_group_buttons(self) -> QWidget:
         """Create group selection buttons."""
@@ -269,10 +318,17 @@ class TrackListWidget(QWidget):
             self._show_empty_state()
             return
             
+        # Filter tracks based on search query
+        filtered_tracks = self._filter_tracks(self.tracks)
+        
+        if not filtered_tracks:
+            self._show_no_results()
+            return
+            
         # Group tracks
         from core.audio_scanner import AudioScanner
         scanner = AudioScanner()
-        scanner.tracks = self.tracks
+        scanner.tracks = filtered_tracks
         
         if self.current_group_mode == "album":
             groups = scanner.group_by_album()
@@ -295,6 +351,41 @@ class TrackListWidget(QWidget):
                 track_widget.track_clicked.connect(self.track_selected.emit)
                 self.content_layout.insertWidget(self.content_layout.count() - 1, track_widget)
                 
+    def _normalize_text(self, text: str) -> str:
+        """
+        Normalize text by removing special characters and extra spaces.
+        This allows searches like "livin in the 70s" to match "livin' in the 70's".
+        """
+        # Convert to lowercase
+        text = text.lower()
+        # Remove special characters (keep only alphanumeric and spaces)
+        text = re.sub(r'[^a-z0-9\s]', '', text)
+        # Collapse multiple spaces into one
+        text = re.sub(r'\s+', ' ', text)
+        return text.strip()
+    
+    def _filter_tracks(self, tracks: List[AudioTrack]) -> List[AudioTrack]:
+        """
+        Filter tracks based on search query.
+        Searches across title, artist, and album name with special character normalization.
+        """
+        if not self.search_query:
+            return tracks
+            
+        # Normalize the search query
+        normalized_query = self._normalize_text(self.search_query)
+        
+        filtered = []
+        for track in tracks:
+            # Search in title, artist, and album
+            searchable = f"{track.title} {track.artist} {track.album}"
+            normalized_searchable = self._normalize_text(searchable)
+            
+            if normalized_query in normalized_searchable:
+                filtered.append(track)
+                
+        return filtered
+        
     def _show_empty_state(self) -> None:
         """Show empty state message."""
         empty_label = QLabel("No tracks found\n\nSelect a music folder to get started")
@@ -303,3 +394,12 @@ class TrackListWidget(QWidget):
         empty_label.setStyleSheet(f"color: {TEXT_SECONDARY}; background: transparent; padding: 40px;")
         empty_label.setWordWrap(True)
         self.content_layout.insertWidget(0, empty_label)
+        
+    def _show_no_results(self) -> None:
+        """Show no search results message."""
+        no_results = QLabel(f"No tracks match '{self.search_query}'\n\nTry a different search term")
+        no_results.setAlignment(Qt.AlignCenter)
+        no_results.setFont(QFont("Segoe UI", 10))
+        no_results.setStyleSheet(f"color: {TEXT_SECONDARY}; background: transparent; padding: 40px;")
+        no_results.setWordWrap(True)
+        self.content_layout.insertWidget(0, no_results)

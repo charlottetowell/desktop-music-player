@@ -52,7 +52,7 @@ desktop-music-player/
    ```bash
    # Windows
    python -m venv venv
-   .\venv\Scripts\activate
+   source .\venv\Scripts\activate
    ```
 
 3. **Install dependencies**
