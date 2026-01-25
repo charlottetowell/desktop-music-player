@@ -12,6 +12,7 @@ from ui.widgets.now_playing_widget import NowPlayingWidget
 from ui.widgets.playback_controls_widget import PlaybackControlsWidget
 from core.queue_manager import QueueManager
 from core.audio_engine import AudioEngine
+from core.settings import Settings
 
 
 class HomeScreen(QWidget):
@@ -22,8 +23,10 @@ class HomeScreen(QWidget):
         self.setAttribute(Qt.WA_StyledBackground, True)
         self.queue_manager = QueueManager()
         self.audio_engine = AudioEngine()
+        self.settings = Settings()
         self._setup_ui()
         self._connect_audio_signals()
+        self._restore_queue()
         
     def _setup_ui(self) -> None:
         """Initialize main 3-column layout."""
@@ -247,3 +250,25 @@ class HomeScreen(QWidget):
     def _on_seek_requested(self, position: float) -> None:
         """Handle seek request from progress bar."""
         self.audio_engine.seek(position)
+    
+    def _restore_queue(self) -> None:
+        """Restore queue from settings on startup."""
+        try:
+            saved_queue = self.settings.get_queue()
+            saved_index = self.settings.get_current_queue_index()
+            if saved_queue:
+                print(f"Restoring queue with {len(saved_queue)} tracks, index {saved_index}")
+                self.queue_manager.restore(saved_queue, saved_index)
+        except Exception as e:
+            print(f"Could not restore queue: {e}")
+    
+    def save_queue(self) -> None:
+        """Save queue to settings."""
+        try:
+            serialized_queue = self.queue_manager.serialize()
+            current_index = self.queue_manager.get_current_index()
+            self.settings.set_queue(serialized_queue)
+            self.settings.set_current_queue_index(current_index)
+            print(f"Queue saved with {len(serialized_queue)} tracks, index {current_index}")
+        except Exception as e:
+            print(f"Could not save queue: {e}")

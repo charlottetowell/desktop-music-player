@@ -2,9 +2,10 @@
 Queue manager for playback queue operations
 """
 
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 from PySide6.QtCore import QObject, Signal
 from core.audio_scanner import AudioTrack
+from pathlib import Path
 
 
 class QueueManager(QObject):
@@ -167,3 +168,52 @@ class QueueManager(QObject):
     def is_empty(self) -> bool:
         """Check if the queue is empty."""
         return len(self._queue) == 0
+    
+    def serialize(self) -> List[Dict[str, Any]]:
+        """Serialize queue to a list of dictionaries for persistence."""
+        serialized = []
+        for track in self._queue:
+            serialized.append({
+                'file_path': str(track.file_path),
+                'title': track.title,
+                'artist': track.artist,
+                'album': track.album,
+                'year': track.year,
+                'track_number': track.track_number,
+                'duration': track.duration,
+                'file_size': track.file_size,
+                'format': track.format,
+            })
+        return serialized
+    
+    def restore(self, serialized_queue: List[Dict[str, Any]], current_index: int) -> None:
+        """Restore queue from serialized data."""
+        self._queue.clear()
+        for track_data in serialized_queue:
+            try:
+                track = AudioTrack(
+                    file_path=Path(track_data['file_path']),
+                    title=track_data.get('title', 'Unknown Title'),
+                    artist=track_data.get('artist', 'Unknown Artist'),
+                    album=track_data.get('album', 'Unknown Album'),
+                    year=track_data.get('year', 'Unknown'),
+                    track_number=track_data.get('track_number'),
+                    duration=track_data.get('duration', 0.0),
+                    file_size=track_data.get('file_size', 0),
+                    format=track_data.get('format', 'unknown'),
+                )
+                # Only add if file still exists
+                if track.file_path.exists():
+                    self._queue.append(track)
+            except Exception as e:
+                print(f"Could not restore track: {e}")
+        
+        # Set current index if valid
+        if 0 <= current_index < len(self._queue):
+            self._current_index = current_index
+        else:
+            self._current_index = -1
+        
+        self.queue_changed.emit()
+        if self._current_index >= 0:
+            self.current_track_changed.emit(self.get_current_track())

@@ -4,7 +4,7 @@ Application settings manager with persistent storage
 
 import json
 from pathlib import Path
-from typing import Optional
+from typing import Optional, List, Dict, Any
 
 
 class Settings:
@@ -73,3 +73,19 @@ class Settings:
         if "music_folder" in self._data:
             del self._data["music_folder"]
             self._save()
+    
+    def get_queue(self) -> List[Dict[str, Any]]:
+        """Get the saved queue."""
+        return self.get("queue", [])
+    
+    def set_queue(self, queue_data: List[Dict[str, Any]]) -> None:
+        """Save the queue data."""
+        self.set("queue", queue_data)
+    
+    def get_current_queue_index(self) -> int:
+        """Get the saved current queue index."""
+        return self.get("current_queue_index", -1)
+    
+    def set_current_queue_index(self, index: int) -> None:
+        """Save the current queue index."""
+        self.set("current_queue_index", index)

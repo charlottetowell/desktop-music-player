@@ -150,3 +150,12 @@ class MainWindow(QMainWindow):
             screen.center().x() - self.width() // 2,
             screen.center().y() - self.height() // 2
         )
+    
+    def closeEvent(self, event) -> None:
+        """Handle window close event - save queue before closing."""
+        try:
+            # Save the current queue state
+            self.home_screen.save_queue()
+        except Exception as e:
+            print(f"Error saving queue on close: {e}")
+        event.accept()

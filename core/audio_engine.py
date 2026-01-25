@@ -70,18 +70,21 @@ class AudioEngine(QObject):
         self._duration = 0.0
         self._playback_thread: Optional[threading.Thread] = None
         self._stop_playback = False
+        self._seek_position: Optional[float] = None  # Target seek position
+        self._pause_position = 0.0  # Position when paused
         
         # Timer for position updates
         self._position_timer = QTimer()
         self._position_timer.timeout.connect(self._update_position)
         self._position_timer.setInterval(100)  # Update every 100ms
         
-    def play(self, track: AudioTrack) -> bool:
+    def play(self, track: AudioTrack, start_position: float = 0.0) -> bool:
         """
         Start playing a track.
         
         Args:
             track: AudioTrack to play
+            start_position: Position in seconds to start from (for seeking)
             
         Returns:
             True if playback started successfully
@@ -106,7 +109,8 @@ class AudioEngine(QObject):
             self._stop_playback = False
             self._is_playing = True
             self._is_paused = False
-            self._position = 0.0
+            self._position = start_position
+            self._seek_position = start_position if start_position > 0 else None
             
             self._playback_thread = threading.Thread(target=self._playback_worker, args=(file_path,))
             self._playback_thread.daemon = True
@@ -130,30 +134,38 @@ class AudioEngine(QObject):
     def _playback_worker(self, file_path: str) -> None:
         """Worker thread for audio playback."""
         try:
-            # Stream the file
+            # Use file streaming for all cases - simple and works
             stream = miniaudio.stream_file(file_path)
             
+            # If seeking, we need to skip samples
+            if self._seek_position and self._seek_position > 0:
+                # Decode to get format info first
+                decoded = miniaudio.decode_file(file_path)
+                sample_rate = decoded.sample_rate
+                nchannels = decoded.nchannels
+                
+                # Calculate how many samples to skip
+                seek_frame = int(self._seek_position * sample_rate)
+                samples_to_skip = seek_frame * nchannels
+                
+                # Consume the stream to skip to position
+                consumed = 0
+                for chunk in stream:
+                    chunk_len = len(chunk)
+                    if consumed + chunk_len > samples_to_skip:
+                        # This chunk contains our start position
+                        break
+                    consumed += chunk_len
+                
             with miniaudio.PlaybackDevice() as device:
                 self._device = device
-                
-                # Start streaming
                 device.start(stream)
-                
-                # Wait for playback to finish or stop signal
-                start_time = time.time()
-                while self._is_playing and not self._stop_playback:
-                    if not self._is_paused:
-                        # Update position estimate
-                        self._position = time.time() - start_time
-                        
-                    time.sleep(0.05)  # Check every 50ms
-                    
-                    # Check if playback finished
-                    if self._position >= self._duration and self._duration > 0:
-                        break
+                self._wait_for_playback()
                         
         except Exception as e:
             print(f"Playback error: {e}")
+            import traceback
+            traceback.print_exc()
             self.error_occurred.emit(str(e))
         finally:
             self._device = None
@@ -165,11 +177,38 @@ class AudioEngine(QObject):
             else:
                 # Track was stopped
                 self.playback_stopped.emit()
+    
+    def _wait_for_playback(self) -> None:
+        """Wait for playback to finish with pause support."""
+        start_time = time.time()
+        pause_accumulated = 0.0
+        last_pause_time = None
+        
+        while self._is_playing and not self._stop_playback:
+            if self._is_paused:
+                if last_pause_time is None:
+                    last_pause_time = time.time()
+                time.sleep(0.05)
+            else:
+                if last_pause_time is not None:
+                    pause_accumulated += time.time() - last_pause_time
+                    last_pause_time = None
+                
+                # Update position estimate
+                elapsed = time.time() - start_time - pause_accumulated
+                self._position = (self._seek_position or 0.0) + elapsed
+                
+                time.sleep(0.05)  # Check every 50ms
+            
+            # Check if playback finished
+            if self._position >= self._duration and self._duration > 0:
+                break
                 
     def pause(self) -> None:
         """Pause playback."""
         if self._is_playing and not self._is_paused:
             self._is_paused = True
+            self._pause_position = self._position
             self._position_timer.stop()
             self.playback_paused.emit()
             
@@ -203,12 +242,15 @@ class AudioEngine(QObject):
             
     def seek(self, position: float) -> None:
         """
-        Seek to position in seconds.
-        Note: Basic seeking support - may need restart for some formats.
+        Seek to position in seconds by restarting playback from that position.
         """
-        if 0 <= position <= self._duration:
-            self._position = position
-            self.position_changed.emit(position)
+        if self.current_track and 0 <= position <= self._duration:
+            was_paused = self._is_paused
+            self.play(self.current_track, start_position=position)
+            if was_paused:
+                # If we were paused, pause again after seeking
+                time.sleep(0.1)  # Brief delay to let playback start
+                self.pause()
             
     def get_position(self) -> float:
         """Get current playback position in seconds."""
