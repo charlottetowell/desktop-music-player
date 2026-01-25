@@ -2,6 +2,7 @@
 Home screen widget - main 3-column interface
 """
 
+from typing import Optional
 from PySide6.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QLabel
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QFont
@@ -10,6 +11,7 @@ from ui.widgets.library_panel import LibraryPanel
 from ui.widgets.queue_widget import QueueWidget
 from ui.widgets.now_playing_widget import NowPlayingWidget
 from ui.widgets.playback_controls_widget import PlaybackControlsWidget
+from ui.mini_player_window import MiniPlayerWindow
 from core.queue_manager import QueueManager
 from core.audio_engine import AudioEngine
 from core.settings import Settings
@@ -26,6 +28,7 @@ class HomeScreen(QWidget):
         self.audio_engine = AudioEngine()
         self.settings = Settings()
         self.media_controller = create_media_controller()
+        self.mini_player: Optional[MiniPlayerWindow] = None
         self._setup_ui()
         self._connect_audio_signals()
         # Delay media controller setup until window is shown
@@ -111,6 +114,7 @@ class HomeScreen(QWidget):
         # Now playing widget
         self.now_playing_widget = NowPlayingWidget()
         self.now_playing_widget.seek_requested.connect(self._on_seek_requested)
+        self.now_playing_widget.mini_player_requested.connect(self._on_open_mini_player)
         panel.add_widget(self.now_playing_widget)
         
         panel.add_stretch()
@@ -259,6 +263,64 @@ class HomeScreen(QWidget):
     def _on_seek_requested(self, position: float) -> None:
         """Handle seek request from progress bar."""
         self.audio_engine.seek(position)
+    
+    def _on_open_mini_player(self) -> None:
+        """Open or show the mini player window."""
+        if self.mini_player is None:
+            # Create mini player window
+            self.mini_player = MiniPlayerWindow()
+            
+            # Connect mini player controls
+            self.mini_player.play_pause_clicked.connect(self._on_play_pause)
+            self.mini_player.next_clicked.connect(self._on_next)
+            self.mini_player.previous_clicked.connect(self._on_previous)
+            
+            # Connect audio signals to mini player
+            self.audio_engine.playback_started.connect(self._update_mini_player_track)
+            self.audio_engine.playback_paused.connect(self._on_mini_player_paused)
+            self.audio_engine.playback_resumed.connect(self._on_mini_player_resumed)
+            self.audio_engine.position_changed.connect(self._on_mini_player_position_changed)
+            self.audio_engine.duration_changed.connect(self._on_mini_player_duration_changed)
+            
+            # Update with current track if playing
+            current_track = self.queue_manager.get_current_track()
+            if current_track:
+                self._update_mini_player_track(current_track)
+                if self.audio_engine.is_playing():
+                    self.mini_player.set_playing(True)
+                else:
+                    self.mini_player.set_playing(False)
+            
+        self.mini_player.show()
+        self.mini_player.raise_()
+        self.mini_player.activateWindow()
+    
+    def _update_mini_player_track(self, track) -> None:
+        """Update mini player with new track."""
+        if self.mini_player:
+            self.mini_player.update_track(track)
+            self.mini_player.set_track(track)
+            self.mini_player.set_playing(True)
+    
+    def _on_mini_player_paused(self) -> None:
+        """Handle playback pause for mini player."""
+        if self.mini_player:
+            self.mini_player.set_playing(False)
+    
+    def _on_mini_player_resumed(self) -> None:
+        """Handle playback resume for mini player."""
+        if self.mini_player:
+            self.mini_player.set_playing(True)
+    
+    def _on_mini_player_position_changed(self, position: float) -> None:
+        """Handle position change for mini player."""
+        if self.mini_player:
+            self.mini_player.update_position(position)
+    
+    def _on_mini_player_duration_changed(self, duration: float) -> None:
+        """Handle duration change for mini player."""
+        if self.mini_player:
+            self.mini_player.set_duration(duration)
     
     def _restore_queue(self) -> None:
         """Restore queue from settings on startup."""

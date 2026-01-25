@@ -3,10 +3,10 @@ Now Playing widget - displays current track information
 """
 
 from typing import Optional
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QSlider, QFrame
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QSlider, QFrame, QPushButton
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QFont, QPixmap, QImage
-from ui.themes.colors import TEXT_PRIMARY, TEXT_SECONDARY, TEXT_MUTED
+from ui.themes.colors import TEXT_PRIMARY, TEXT_SECONDARY, TEXT_MUTED, ACCENT_HOVER
 from core.audio_scanner import AudioTrack
 from ui.widgets.audio_visualizer_widget import AudioVisualizerWidget
 
@@ -15,6 +15,7 @@ class NowPlayingWidget(QWidget):
     """Widget displaying currently playing track with album art and progress."""
     
     seek_requested = Signal(float)  # Emits position in seconds
+    mini_player_requested = Signal()  # Emits when mini player button clicked
     
     def __init__(self, parent: QWidget = None) -> None:
         super().__init__(parent)
@@ -135,6 +136,35 @@ class NowPlayingWidget(QWidget):
         layout.addSpacing(16)
         self.visualizer = AudioVisualizerWidget()
         layout.addWidget(self.visualizer)
+        
+        # Mini Player button
+        layout.addSpacing(12)
+        mini_player_btn = QPushButton("Open Mini Player")
+        mini_player_btn.setFont(QFont("Segoe UI", 10))
+        mini_player_btn.setCursor(Qt.PointingHandCursor)
+        mini_player_btn.setStyleSheet(f"""
+            QPushButton {{
+                background-color: rgba(100, 149, 237, 0.15);
+                color: #6495ed;
+                border: 1px solid rgba(100, 149, 237, 0.3);
+                border-radius: 6px;
+                padding: 10px 20px;
+            }}
+            QPushButton:hover {{
+                background-color: rgba(100, 149, 237, 0.25);
+                border-color: rgba(100, 149, 237, 0.5);
+            }}
+            QPushButton:pressed {{
+                background-color: rgba(100, 149, 237, 0.35);
+            }}
+        """)
+        mini_player_btn.clicked.connect(self.mini_player_requested.emit)
+        
+        btn_container = QHBoxLayout()
+        btn_container.addStretch()
+        btn_container.addWidget(mini_player_btn)
+        btn_container.addStretch()
+        layout.addLayout(btn_container)
         
         layout.addStretch()
         
