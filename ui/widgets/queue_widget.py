@@ -256,11 +256,42 @@ class QueueWidget(QWidget):
         main_layout.setContentsMargins(0, 0, 0, 0)
         main_layout.setSpacing(0)
         
-        # Up Next Section (Top)
+        # Header with Up Next title and Clear button
+        header_layout = QHBoxLayout()
+        header_layout.setContentsMargins(16, 12, 12, 8)
+        header_layout.setSpacing(8)
+        
         up_next_label = QLabel("Up Next")
         up_next_label.setFont(QFont("Segoe UI", 12, QFont.Bold))
-        up_next_label.setStyleSheet(f"color: {TEXT_PRIMARY}; background: transparent; padding: 12px 16px 8px 16px;")
-        main_layout.addWidget(up_next_label)
+        up_next_label.setStyleSheet(f"color: {TEXT_PRIMARY}; background: transparent;")
+        header_layout.addWidget(up_next_label)
+        
+        header_layout.addStretch()
+        
+        # Clear Queue button
+        self.clear_btn = QPushButton("Clear Queue")
+        self.clear_btn.setFont(QFont("Segoe UI", 9))
+        self.clear_btn.setCursor(Qt.PointingHandCursor)
+        self.clear_btn.setStyleSheet(f"""
+            QPushButton {{
+                background-color: rgba(0, 0, 0, 0.05);
+                color: {TEXT_SECONDARY};
+                border: none;
+                border-radius: 4px;
+                padding: 6px 12px;
+            }}
+            QPushButton:hover {{
+                background-color: rgba(229, 115, 115, 0.2);
+                color: #e57373;
+            }}
+            QPushButton:pressed {{
+                background-color: rgba(229, 115, 115, 0.3);
+            }}
+        """)
+        self.clear_btn.clicked.connect(self._on_clear_queue)
+        header_layout.addWidget(self.clear_btn)
+        
+        main_layout.addLayout(header_layout)
         
         # Up Next scroll area
         self.up_next_scroll = QScrollArea()
@@ -471,6 +502,10 @@ class QueueWidget(QWidget):
     def _on_current_track_changed(self, track: Optional[AudioTrack]) -> None:
         """Handle current track change."""
         self._refresh_display()
+    
+    def _on_clear_queue(self) -> None:
+        """Handle clear queue button click."""
+        self.queue_manager.clear_queue()
         
     def _load_album_art(self, image_data: bytes) -> Optional[QPixmap]:
         """Convert image bytes to QPixmap."""
