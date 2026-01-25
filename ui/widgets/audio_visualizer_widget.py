@@ -70,8 +70,10 @@ class AudioVisualizerWidget(QWidget):
         self.smoothing = 0.6  # Smoothing factor for waveform
         
         # Style settings
-        self.line_width = 2.5
+        self.line_width = 3.0
         self.glow_enabled = True
+        self.amplitude_boost = 2.5  # Boost amplitude for more dramatic effect
+        self.compression_factor = 0.7  # Compress dynamic range to make quiet parts visible
         
         # Worker thread for audio analysis
         self.worker: Optional[AudioAnalysisWorker] = None
@@ -182,6 +184,16 @@ class AudioVisualizerWidget(QWidget):
                     audio_window
                 )
             
+            # Apply amplitude boost and compression for more dramatic effect
+            # Compression: apply power function to reduce dynamic range
+            sign = np.sign(new_points)
+            magnitude = np.abs(new_points)
+            compressed = np.power(magnitude, self.compression_factor)
+            new_points = sign * compressed * self.amplitude_boost
+            
+            # Clip to prevent overflow
+            new_points = np.clip(new_points, -1.0, 1.0)
+            
             # Apply smoothing for animation
             self.waveform_points = (self.smoothing * self.waveform_points + 
                                    (1 - self.smoothing) * new_points)
@@ -209,18 +221,28 @@ class AudioVisualizerWidget(QWidget):
         gradient.setColorAt(0.66, self.gradient_colors[2])
         gradient.setColorAt(1.0, self.gradient_colors[3])
         
-        # Draw waveform with glow effect
+        # Draw waveform with multiple glow layers for more dramatic effect
         if self.glow_enabled:
-            # Draw glow (thicker, semi-transparent)
-            glow_pen = QPen(gradient, self.line_width + 4)
-            glow_pen.setCapStyle(Qt.RoundCap)
-            glow_pen.setJoinStyle(Qt.RoundJoin)
+            # Outer glow (widest, most transparent)
+            outer_glow = QPen(QColor(self.gradient_colors[2]))
+            outer_glow.setWidth(int(self.line_width + 8))
+            outer_glow.setCapStyle(Qt.RoundCap)
+            outer_glow.setJoinStyle(Qt.RoundJoin)
+            glow_color = QColor(self.gradient_colors[2])
+            glow_color.setAlpha(40)
+            outer_glow.setColor(glow_color)
+            painter.setPen(outer_glow)
+            self._draw_waveform_path(painter, width, height, center_y)
             
-            glow_color = QColor(self.gradient_colors[1])
-            glow_color.setAlpha(60)
-            glow_pen.setColor(glow_color)
-            
-            painter.setPen(glow_pen)
+            # Inner glow (medium thickness)
+            inner_glow = QPen(QColor(self.gradient_colors[1]))
+            inner_glow.setWidth(int(self.line_width + 4))
+            inner_glow.setCapStyle(Qt.RoundCap)
+            inner_glow.setJoinStyle(Qt.RoundJoin)
+            glow_color2 = QColor(self.gradient_colors[1])
+            glow_color2.setAlpha(80)
+            inner_glow.setColor(glow_color2)
+            painter.setPen(inner_glow)
             self._draw_waveform_path(painter, width, height, center_y)
         
         # Draw main waveform
@@ -252,10 +274,11 @@ class AudioVisualizerWidget(QWidget):
         first_y = center_y + (self.waveform_points[0] * height * 0.45)
         path.moveTo(0, first_y)
         
-        # Draw waveform
+        # Draw waveform with more dramatic scaling
         for i in range(1, self.n_samples):
             x = i * x_step
-            y = center_y + (self.waveform_points[i] * height * 0.45)
+            # Scale to 48% of height for more dramatic effect (was 45%)
+            y = center_y + (self.waveform_points[i] * height * 0.48)
             path.lineTo(x, y)
         
         painter.drawPath(path)
