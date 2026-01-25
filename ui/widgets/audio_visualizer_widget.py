@@ -1,12 +1,12 @@
 """
-Audio visualizer widget using librosa for real-time frequency analysis
+Audio visualizer widget using librosa for real-time waveform visualization
 """
 
 from typing import Optional
 import numpy as np
 from PySide6.QtWidgets import QWidget
-from PySide6.QtCore import Qt, QTimer, Signal, QThread
-from PySide6.QtGui import QPainter, QLinearGradient, QColor, QPen
+from PySide6.QtCore import Qt, QTimer, Signal, QThread, QPointF
+from PySide6.QtGui import QPainter, QLinearGradient, QColor, QPen, QPainterPath
 import librosa
 from core.audio_scanner import AudioTrack
 
@@ -14,7 +14,7 @@ from core.audio_scanner import AudioTrack
 class AudioAnalysisWorker(QThread):
     """Worker thread for audio analysis to prevent UI blocking."""
     
-    analysis_ready = Signal(np.ndarray, float)  # spectrum data, sample_rate
+    analysis_ready = Signal(np.ndarray, float)  # waveform data, sample_rate
     
     def __init__(self) -> None:
         super().__init__()
@@ -26,7 +26,7 @@ class AudioAnalysisWorker(QThread):
         self.track = track
         
     def run(self) -> None:
-        """Analyze audio file and emit spectrum data."""
+        """Analyze audio file and emit waveform data."""
         if not self.track:
             return
             
@@ -49,7 +49,7 @@ class AudioAnalysisWorker(QThread):
 
 class AudioVisualizerWidget(QWidget):
     """
-    Modern audio visualizer displaying frequency spectrum.
+    Modern audio visualizer displaying waveform.
     Uses librosa for audio analysis.
     """
     
@@ -64,18 +64,14 @@ class AudioVisualizerWidget(QWidget):
         self.current_position: float = 0.0
         self.duration: float = 0.0
         
-        # Visualization state
-        self.n_bars = 64  # Number of frequency bars
-        self.bar_heights = np.zeros(self.n_bars)
-        self.bar_velocities = np.zeros(self.n_bars)
-        self.bar_peaks = np.zeros(self.n_bars)
-        self.peak_decay = np.zeros(self.n_bars)
+        # Waveform visualization state
+        self.n_samples = 200  # Number of samples to display in waveform
+        self.waveform_points = np.zeros(self.n_samples)
+        self.smoothing = 0.6  # Smoothing factor for waveform
         
         # Style settings
-        self.bar_spacing = 2
-        self.smoothing = 0.7  # Smoothing factor for bar heights
-        self.gravity = 0.95  # Gravity for falling bars
-        self.peak_hold = 20  # Frames to hold peak
+        self.line_width = 2.5
+        self.glow_enabled = True
         
         # Worker thread for audio analysis
         self.worker: Optional[AudioAnalysisWorker] = None
@@ -108,8 +104,7 @@ class AudioVisualizerWidget(QWidget):
             self.worker.stop()
             
         # Reset visualization
-        self.bar_heights = np.zeros(self.n_bars)
-        self.bar_peaks = np.zeros(self.n_bars)
+        self.waveform_points = np.zeros(self.n_samples)
         self.audio_data = None
         
         # Start new analysis
@@ -133,9 +128,8 @@ class AudioVisualizerWidget(QWidget):
     def stop(self) -> None:
         """Stop visualization updates."""
         self.update_timer.stop()
-        # Smoothly animate bars to zero
-        for i in range(self.n_bars):
-            self.bar_heights[i] *= 0.8
+        # Smoothly animate waveform to zero
+        self.waveform_points *= 0.5
         self.update()
         
     def pause(self) -> None:
@@ -152,7 +146,7 @@ class AudioVisualizerWidget(QWidget):
         self.sample_rate = sample_rate
         
     def _update_visualization(self) -> None:
-        """Update visualization based on current playback position."""
+        """Update waveform visualization based on current playback position."""
         if self.audio_data is None or len(self.audio_data) == 0:
             self.update()
             return
@@ -161,11 +155,10 @@ class AudioVisualizerWidget(QWidget):
             # Calculate the current frame position
             frame_pos = int(self.current_position * self.sample_rate)
             
-            # Extract a window of audio around current position
-            window_size = 2048
-            hop_length = 512
+            # Define window size for waveform display (show ~0.5 seconds of audio)
+            window_size = int(self.sample_rate * 0.5)
             
-            # Get audio window
+            # Get audio window centered at current position
             start = max(0, frame_pos - window_size // 2)
             end = min(len(self.audio_data), start + window_size)
             
@@ -176,46 +169,22 @@ class AudioVisualizerWidget(QWidget):
             else:
                 audio_window = self.audio_data[start:end]
                 
-            # Apply window function
-            audio_window = audio_window * np.hamming(len(audio_window))
+            # Downsample to n_samples points for display
+            if len(audio_window) > self.n_samples:
+                # Use stride to downsample evenly
+                indices = np.linspace(0, len(audio_window) - 1, self.n_samples, dtype=int)
+                new_points = audio_window[indices]
+            else:
+                # Interpolate if we have fewer samples
+                new_points = np.interp(
+                    np.linspace(0, len(audio_window) - 1, self.n_samples),
+                    np.arange(len(audio_window)),
+                    audio_window
+                )
             
-            # Compute FFT
-            fft = np.fft.rfft(audio_window)
-            magnitude = np.abs(fft)
-            
-            # Convert to dB scale
-            magnitude = librosa.amplitude_to_db(magnitude, ref=np.max)
-            
-            # Normalize to 0-1 range
-            magnitude = (magnitude + 80) / 80  # Assuming -80dB to 0dB range
-            magnitude = np.clip(magnitude, 0, 1)
-            
-            # Bin the frequencies into bars
-            n_fft_bins = len(magnitude)
-            bins_per_bar = max(1, n_fft_bins // self.n_bars)
-            
-            new_heights = np.zeros(self.n_bars)
-            for i in range(self.n_bars):
-                start_bin = i * bins_per_bar
-                end_bin = min((i + 1) * bins_per_bar, n_fft_bins)
-                if end_bin > start_bin:
-                    # Use max value in bin range for more dynamic visualization
-                    new_heights[i] = np.max(magnitude[start_bin:end_bin])
-                    
-            # Apply smoothing
-            self.bar_heights = (self.smoothing * self.bar_heights + 
-                              (1 - self.smoothing) * new_heights)
-            
-            # Update peaks
-            for i in range(self.n_bars):
-                if self.bar_heights[i] > self.bar_peaks[i]:
-                    self.bar_peaks[i] = self.bar_heights[i]
-                    self.peak_decay[i] = self.peak_hold
-                else:
-                    if self.peak_decay[i] > 0:
-                        self.peak_decay[i] -= 1
-                    else:
-                        self.bar_peaks[i] *= self.gravity
+            # Apply smoothing for animation
+            self.waveform_points = (self.smoothing * self.waveform_points + 
+                                   (1 - self.smoothing) * new_points)
                         
         except Exception as e:
             print(f"Visualization update error: {e}")
@@ -223,7 +192,7 @@ class AudioVisualizerWidget(QWidget):
         self.update()
         
     def paintEvent(self, event) -> None:
-        """Paint the visualizer."""
+        """Paint the waveform visualizer."""
         super().paintEvent(event)
         
         painter = QPainter(self)
@@ -231,40 +200,65 @@ class AudioVisualizerWidget(QWidget):
         
         width = self.width()
         height = self.height()
+        center_y = height / 2
         
-        # Calculate bar dimensions
-        bar_width = (width - (self.n_bars - 1) * self.bar_spacing) / self.n_bars
-        
-        # Create gradient
-        gradient = QLinearGradient(0, height, 0, 0)
+        # Create gradient for waveform
+        gradient = QLinearGradient(0, 0, width, 0)
         gradient.setColorAt(0.0, self.gradient_colors[0])
-        gradient.setColorAt(0.4, self.gradient_colors[1])
-        gradient.setColorAt(0.7, self.gradient_colors[2])
+        gradient.setColorAt(0.33, self.gradient_colors[1])
+        gradient.setColorAt(0.66, self.gradient_colors[2])
         gradient.setColorAt(1.0, self.gradient_colors[3])
         
-        # Draw bars
-        for i in range(self.n_bars):
-            x = i * (bar_width + self.bar_spacing)
-            bar_height = self.bar_heights[i] * height * 0.9
-            y = height - bar_height
+        # Draw waveform with glow effect
+        if self.glow_enabled:
+            # Draw glow (thicker, semi-transparent)
+            glow_pen = QPen(gradient, self.line_width + 4)
+            glow_pen.setCapStyle(Qt.RoundCap)
+            glow_pen.setJoinStyle(Qt.RoundJoin)
             
-            # Draw main bar with gradient
-            painter.fillRect(
-                int(x), int(y),
-                int(bar_width), int(bar_height),
-                gradient
-            )
+            glow_color = QColor(self.gradient_colors[1])
+            glow_color.setAlpha(60)
+            glow_pen.setColor(glow_color)
             
-            # Draw peak indicator
-            peak_y = height - (self.bar_peaks[i] * height * 0.9)
-            if self.bar_peaks[i] > 0.05:  # Only draw visible peaks
-                painter.setPen(QPen(self.gradient_colors[3], 2))
-                painter.drawLine(
-                    int(x), int(peak_y),
-                    int(x + bar_width), int(peak_y)
-                )
-                
+            painter.setPen(glow_pen)
+            self._draw_waveform_path(painter, width, height, center_y)
+        
+        # Draw main waveform
+        main_pen = QPen(gradient, self.line_width)
+        main_pen.setCapStyle(Qt.RoundCap)
+        main_pen.setJoinStyle(Qt.RoundJoin)
+        painter.setPen(main_pen)
+        
+        self._draw_waveform_path(painter, width, height, center_y)
+        
+        # Draw center line (subtle)
+        center_line_pen = QPen(QColor(0, 0, 0, 30), 1)
+        painter.setPen(center_line_pen)
+        painter.drawLine(0, int(center_y), width, int(center_y))
+        
         painter.end()
+        
+    def _draw_waveform_path(self, painter: QPainter, width: int, height: int, center_y: float) -> None:
+        """Draw the waveform path."""
+        if len(self.waveform_points) < 2:
+            return
+            
+        path = QPainterPath()
+        
+        # Calculate x position for each sample
+        x_step = width / (self.n_samples - 1)
+        
+        # Start path
+        first_y = center_y + (self.waveform_points[0] * height * 0.45)
+        path.moveTo(0, first_y)
+        
+        # Draw waveform
+        for i in range(1, self.n_samples):
+            x = i * x_step
+            y = center_y + (self.waveform_points[i] * height * 0.45)
+            path.lineTo(x, y)
+        
+        painter.drawPath(path)
         
     def cleanup(self) -> None:
         """Cleanup resources."""

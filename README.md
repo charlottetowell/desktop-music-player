@@ -20,11 +20,11 @@ A cross-platform desktop audio player with real-time visualization, built with P
   - Supports MP3, FLAC, WAV, OGG, M4A, AAC
   - Album art extraction from tags
   - Group by Album, Artist, Year, or Folder
-- **Real-Time Audio Visualizer**: Frequency spectrum visualization powered by librosa
-  - 64-bar frequency spectrum display
-  - Smooth animations with peak indicators
-  - Modern gradient styling (peachy theme)
-  - Synced with playback position
+- **Real-Time Audio Visualizer**: Waveform visualization powered by librosa
+  - Smooth, animated waveform display
+  - Shows ~0.5 seconds of audio at current playback position
+  - Glow effects and gradient styling (peachy theme)
+  - 200-sample resolution for fluid motion
   - Automatic pause/resume with playback state
 - **Mini Mode**: Dockable, always-on-top widgets (coming soon)
 - **MVVM Architecture**: Clean separation between audio engine and UI
@@ -111,15 +111,16 @@ pip install -r requirements.txt
 
 ## Audio Visualizer
 
-The audio visualizer provides real-time frequency spectrum visualization:
+The audio visualizer provides real-time waveform visualization:
 
-- **Technology**: Uses librosa for audio analysis with FFT (Fast Fourier Transform)
+- **Technology**: Uses librosa for audio analysis with real-time waveform extraction
 - **Features**:
-  - 64-band frequency spectrum with smooth animations
-  - Peak indicators with gravity-based decay
-  - Position-synchronized visualization (analyzes audio at current playback position)
+  - Smooth waveform display showing audio amplitude over time
+  - Displays ~0.5 seconds of audio centered at current playback position
+  - Glow effects for modern, sleek appearance
+  - Horizontal gradient styling matching the app theme (red → pink)
+  - 200-sample resolution for fluid, smooth animations
   - Automatic pause/resume with playback state
-  - Modern gradient styling matching the app theme
 - **Performance**: Runs in a separate worker thread to prevent UI blocking
 - **Location**: Displayed in the right panel under the seek slider
 
