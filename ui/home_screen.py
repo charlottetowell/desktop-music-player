@@ -169,6 +169,7 @@ class HomeScreen(QWidget):
         
         # Connect queue manager signals
         self.queue_manager.current_track_changed.connect(self._on_current_track_changed)
+        self.queue_manager.queue_changed.connect(self.save_queue)
         
     def _play_current_track(self) -> None:
         """Play the current track from queue."""

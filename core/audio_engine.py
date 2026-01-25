@@ -205,18 +205,29 @@ class AudioEngine(QObject):
                 break
                 
     def pause(self) -> None:
-        """Pause playback."""
+        """Pause playback by stopping and saving position."""
         if self._is_playing and not self._is_paused:
             self._is_paused = True
             self._pause_position = self._position
+            # Stop the playback thread - we'll restart from saved position on resume
+            self._stop_playback = True
             self._position_timer.stop()
+            
+            # Wait for thread to finish
+            if self._playback_thread and self._playback_thread.is_alive():
+                self._playback_thread.join(timeout=1.0)
+            
+            # Reset flags but keep paused state
+            self._stop_playback = False
+            self._is_playing = False
             self.playback_paused.emit()
             
     def resume(self) -> None:
-        """Resume playback."""
-        if self._is_playing and self._is_paused:
+        """Resume playback from paused position."""
+        if self._is_paused and self.current_track:
             self._is_paused = False
-            self._position_timer.start()
+            # Restart playback from the saved position
+            self.play(self.current_track, start_position=self._pause_position)
             self.playback_resumed.emit()
             
     def stop(self) -> None:
@@ -246,11 +257,14 @@ class AudioEngine(QObject):
         """
         if self.current_track and 0 <= position <= self._duration:
             was_paused = self._is_paused
-            self.play(self.current_track, start_position=position)
-            if was_paused:
-                # If we were paused, pause again after seeking
-                time.sleep(0.1)  # Brief delay to let playback start
-                self.pause()
+            was_playing = self._is_playing
+            
+            if was_playing or was_paused:
+                self.play(self.current_track, start_position=position)
+                if was_paused:
+                    # If we were paused, pause again after seeking
+                    time.sleep(0.1)  # Brief delay to let playback start
+                    self.pause()
             
     def get_position(self) -> float:
         """Get current playback position in seconds."""
@@ -261,7 +275,7 @@ class AudioEngine(QObject):
         return self._duration
         
     def is_playing(self) -> bool:
-        """Check if audio is currently playing."""
+        """Check if audio is currently playing (not paused)."""
         return self._is_playing and not self._is_paused
         
     def is_paused(self) -> bool:
