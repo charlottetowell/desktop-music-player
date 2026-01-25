@@ -8,7 +8,10 @@ from PySide6.QtGui import QFont
 from ui.widgets import Panel, SectionHeader, PlaceholderContent
 from ui.widgets.library_panel import LibraryPanel
 from ui.widgets.queue_widget import QueueWidget
+from ui.widgets.now_playing_widget import NowPlayingWidget
+from ui.widgets.playback_controls_widget import PlaybackControlsWidget
 from core.queue_manager import QueueManager
+from core.audio_engine import AudioEngine
 
 
 class HomeScreen(QWidget):
@@ -18,7 +21,9 @@ class HomeScreen(QWidget):
         super().__init__()
         self.setAttribute(Qt.WA_StyledBackground, True)
         self.queue_manager = QueueManager()
+        self.audio_engine = AudioEngine()
         self._setup_ui()
+        self._connect_audio_signals()
         
     def _setup_ui(self) -> None:
         """Initialize main 3-column layout."""
@@ -95,13 +100,19 @@ class HomeScreen(QWidget):
         """Create right panel for currently playing track."""
         panel = Panel(title="Currently Playing", background_color="#fec5bb")
         
-        # Placeholder content
-        placeholder = PlaceholderContent(
-            "Track information and controls will appear here.\n\n"
-            "• Album artwork\n• Track details\n• Playback controls\n• Volume control"
-        )
-        panel.add_widget(placeholder)
+        # Now playing widget
+        self.now_playing_widget = NowPlayingWidget()
+        self.now_playing_widget.seek_requested.connect(self._on_seek_requested)
+        panel.add_widget(self.now_playing_widget)
+        
         panel.add_stretch()
+        
+        # Playback controls at bottom
+        self.playback_controls = PlaybackControlsWidget()
+        self.playback_controls.play_pause_clicked.connect(self._on_play_pause)
+        self.playback_controls.next_clicked.connect(self._on_next)
+        self.playback_controls.previous_clicked.connect(self._on_previous)
+        panel.add_widget(self.playback_controls)
         
         return panel
         
@@ -142,4 +153,97 @@ class HomeScreen(QWidget):
         """Handle double-click on queue track - play from that position."""
         print(f"Playing from queue index: {index}")
         self.queue_manager.set_current_index(index)
-        # TODO: Start playback of selected track
+        self._play_current_track()
+        
+    def _connect_audio_signals(self) -> None:
+        """Connect audio engine signals."""
+        self.audio_engine.playback_started.connect(self._on_playback_started)
+        self.audio_engine.playback_paused.connect(self._on_playback_paused)
+        self.audio_engine.playback_resumed.connect(self._on_playback_resumed)
+        self.audio_engine.playback_finished.connect(self._on_playback_finished)
+        self.audio_engine.position_changed.connect(self._on_position_changed)
+        self.audio_engine.duration_changed.connect(self._on_duration_changed)
+        
+        # Connect queue manager signals
+        self.queue_manager.current_track_changed.connect(self._on_current_track_changed)
+        
+    def _play_current_track(self) -> None:
+        """Play the current track from queue."""
+        track = self.queue_manager.get_current_track()
+        if track:
+            self.audio_engine.play(track)
+            
+    def _on_playback_started(self, track) -> None:
+        """Handle playback start."""
+        self.now_playing_widget.set_track(track)
+        self.playback_controls.set_playing(True)
+        self.playback_controls.set_enabled(True)
+        
+    def _on_playback_paused(self) -> None:
+        """Handle playback pause."""
+        self.playback_controls.set_playing(False)
+        
+    def _on_playback_resumed(self) -> None:
+        """Handle playback resume."""
+        self.playback_controls.set_playing(True)
+        
+    def _on_playback_finished(self) -> None:
+        """Handle track finish - auto advance."""
+        print("Track finished, advancing to next...")
+        if self.queue_manager.has_next():
+            self.queue_manager.next_track()
+            self._play_current_track()
+        else:
+            print("End of queue reached")
+            self.playback_controls.set_playing(False)
+            
+    def _on_position_changed(self, position: float) -> None:
+        """Handle playback position update."""
+        self.now_playing_widget.update_position(position)
+        
+    def _on_duration_changed(self, duration: float) -> None:
+        """Handle duration change."""
+        self.now_playing_widget.set_duration(duration)
+        
+    def _on_current_track_changed(self, track) -> None:
+        """Handle current track change from queue manager."""
+        if track and not self.audio_engine.is_playing():
+            # Track changed but not playing - update display only
+            self.now_playing_widget.set_track(track)
+            
+    def _on_play_pause(self) -> None:
+        """Handle play/pause button."""
+        if self.audio_engine.is_playing() or self.audio_engine.is_paused():
+            # Toggle current playback
+            self.audio_engine.toggle_play_pause()
+        else:
+            # Start playing current track
+            self._play_current_track()
+            
+    def _on_next(self) -> None:
+        """Handle next button."""
+        if self.queue_manager.has_next():
+            self.queue_manager.next_track()
+            self._play_current_track()
+            
+    def _on_previous(self) -> None:
+        """Handle previous button."""
+        # Try history first
+        prev_track = self.audio_engine.get_previous_track()
+        if prev_track:
+            # Find track in queue and play it
+            queue = self.queue_manager.get_queue()
+            for idx, track in enumerate(queue):
+                if track.file_path == prev_track.file_path:
+                    self.queue_manager.set_current_index(idx)
+                    self._play_current_track()
+                    return
+                    
+        # Fallback to queue previous
+        if self.queue_manager.has_previous():
+            self.queue_manager.previous_track()
+            self._play_current_track()
+            
+    def _on_seek_requested(self, position: float) -> None:
+        """Handle seek request from progress bar."""
+        self.audio_engine.seek(position)

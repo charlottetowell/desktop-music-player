@@ -6,21 +6,31 @@ A cross-platform desktop audio player with real-time visualization, built with P
 
 - **Cross-Platform**: Windows & Linux support
 - **Modern UI**: Frameless, transparent window with custom title bar
+- **Audio Playback**: Full playback engine with play/pause/skip controls
+  - Real-time progress bar and position tracking
+  - Album art display with track information
+  - Auto-advance to next track
+  - Playback history (15 tracks back)
 - **Queue Management**: Add tracks by double-clicking or dragging from library
   - Album-grouped display with cover art
   - Drag-and-drop reordering within queue
   - Manual track removal
   - Visual highlighting of currently playing track
-- **Mini Mode**: Dockable, always-on-top widgets
-- **Real-Time Visualization**: FFT-based audio visualization using numpy
+- **Library Scanner**: Automatic metadata extraction
+  - Supports MP3, FLAC, WAV, OGG, M4A, AAC
+  - Album art extraction from tags
+  - Group by Album, Artist, Year, or Folder
+- **Mini Mode**: Dockable, always-on-top widgets (coming soon)
+- **Real-Time Visualization**: FFT-based audio visualization using numpy (coming soon)
 - **MVVM Architecture**: Clean separation between audio engine and UI
 
 ## Tech Stack
 
 - **UI Framework**: PySide6 (Qt for Python)
-- **Audio Engine**: miniaudio or pygame.mixer
-- **DSP/Visualization**: numpy for real-time PCM data processing
-- **Concurrency**: Worker threads for audio decoding and FFT analysis
+- **Audio Engine**: miniaudio (cross-platform playback)
+- **Metadata**: mutagen (audio file tag reading)
+- **DSP/Visualization**: numpy for real-time PCM data processing (coming soon)
+- **Concurrency**: Worker threads for audio decoding and playback
 
 ## Project Structure
 
@@ -74,9 +84,9 @@ python main.py
 ## Dependencies
 
 - **PySide6**: Qt framework for Python
-- **numpy**: Fast array operations for DSP
+- **miniaudio**: Cross-platform audio playback
 - **mutagen**: Audio metadata extraction and album art
-- **miniaudio** or **pygame**: Audio playback backend
+- **numpy**: Fast array operations for DSP
 
 Install all dependencies via:
 ```bash
