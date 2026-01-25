@@ -8,6 +8,7 @@ from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QFont, QPixmap, QImage
 from ui.themes.colors import TEXT_PRIMARY, TEXT_SECONDARY, TEXT_MUTED
 from core.audio_scanner import AudioTrack
+from ui.widgets.audio_visualizer_widget import AudioVisualizerWidget
 
 
 class NowPlayingWidget(QWidget):
@@ -129,6 +130,12 @@ class NowPlayingWidget(QWidget):
         progress_layout.addLayout(time_layout)
         
         layout.addLayout(progress_layout)
+        
+        # Audio visualizer
+        layout.addSpacing(16)
+        self.visualizer = AudioVisualizerWidget()
+        layout.addWidget(self.visualizer)
+        
         layout.addStretch()
         
         self.setStyleSheet("NowPlayingWidget { background: transparent; }")
@@ -155,10 +162,15 @@ class NowPlayingWidget(QWidget):
         else:
             self._show_default_art()
             
+        # Set track for visualizer
+        self.visualizer.set_track(track)
+        self.visualizer.start()
+            
     def set_duration(self, duration: float) -> None:
         """Set track duration."""
         self.duration = duration
         self.total_time_label.setText(self._format_time(duration))
+        self.visualizer.set_duration(duration)
         
     def update_position(self, position: float) -> None:
         """Update playback position."""
@@ -169,6 +181,9 @@ class NowPlayingWidget(QWidget):
             if self.duration > 0:
                 progress = int((position / self.duration) * 1000)
                 self.progress_slider.setValue(progress)
+                
+        # Update visualizer
+        self.visualizer.update_position(position)
                 
     def _load_album_art(self, image_data: bytes) -> None:
         """Load album art from bytes."""
@@ -222,3 +237,15 @@ class NowPlayingWidget(QWidget):
         if self.duration > 0:
             position = (self.progress_slider.value() / 1000) * self.duration
             self.seek_requested.emit(position)
+            
+    def pause_visualizer(self) -> None:
+        """Pause the visualizer."""
+        self.visualizer.pause()
+        
+    def resume_visualizer(self) -> None:
+        """Resume the visualizer."""
+        self.visualizer.resume()
+        
+    def stop_visualizer(self) -> None:
+        """Stop the visualizer."""
+        self.visualizer.stop()

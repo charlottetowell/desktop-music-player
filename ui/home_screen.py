@@ -186,10 +186,12 @@ class HomeScreen(QWidget):
     def _on_playback_paused(self) -> None:
         """Handle playback pause."""
         self.playback_controls.set_playing(False)
+        self.now_playing_widget.pause_visualizer()
         
     def _on_playback_resumed(self) -> None:
         """Handle playback resume."""
         self.playback_controls.set_playing(True)
+        self.now_playing_widget.resume_visualizer()
         
     def _on_playback_finished(self) -> None:
         """Handle track finish - auto advance."""
@@ -200,6 +202,7 @@ class HomeScreen(QWidget):
         else:
             print("End of queue reached")
             self.playback_controls.set_playing(False)
+            self.now_playing_widget.stop_visualizer()
             
     def _on_position_changed(self, position: float) -> None:
         """Handle playback position update."""
