@@ -4,7 +4,7 @@ Queue manager for playback queue operations
 
 from typing import List, Optional, Dict, Any
 from PySide6.QtCore import QObject, Signal
-from core.audio_scanner import AudioTrack
+from core.audio_scanner import AudioTrack, AudioScanner
 from pathlib import Path
 
 
@@ -189,10 +189,18 @@ class QueueManager(QObject):
     def restore(self, serialized_queue: List[Dict[str, Any]], current_index: int) -> None:
         """Restore queue from serialized data."""
         self._queue.clear()
+        scanner = AudioScanner()  # For extracting album art
+        
         for track_data in serialized_queue:
             try:
+                file_path = Path(track_data['file_path'])
+                
+                # Only add if file still exists
+                if not file_path.exists():
+                    continue
+                    
                 track = AudioTrack(
-                    file_path=Path(track_data['file_path']),
+                    file_path=file_path,
                     title=track_data.get('title', 'Unknown Title'),
                     artist=track_data.get('artist', 'Unknown Artist'),
                     album=track_data.get('album', 'Unknown Album'),
@@ -202,9 +210,11 @@ class QueueManager(QObject):
                     file_size=track_data.get('file_size', 0),
                     format=track_data.get('format', 'unknown'),
                 )
-                # Only add if file still exists
-                if track.file_path.exists():
-                    self._queue.append(track)
+                
+                # Re-extract album art from the file
+                track.album_art_data = scanner._extract_album_art(file_path)
+                
+                self._queue.append(track)
             except Exception as e:
                 print(f"Could not restore track: {e}")
         
