@@ -169,6 +169,18 @@ class QueueManager(QObject):
         """Check if the queue is empty."""
         return len(self._queue) == 0
     
+    def get_up_next(self) -> List[AudioTrack]:
+        """Get tracks that are up next (after current track)."""
+        if self._current_index < 0 or self._current_index >= len(self._queue) - 1:
+            return []
+        return self._queue[self._current_index + 1:].copy()
+    
+    def get_just_played(self) -> List[AudioTrack]:
+        """Get tracks that have been played (including current track)."""
+        if self._current_index < 0:
+            return []
+        return self._queue[:self._current_index + 1].copy()
+    
     def serialize(self) -> List[Dict[str, Any]]:
         """Serialize queue to a list of dictionaries for persistence."""
         serialized = []

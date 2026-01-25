@@ -20,11 +20,12 @@ class QueueTrackWidget(QFrame):
     remove_requested = Signal(int)  # Emits queue index
     drag_started = Signal(int)  # Emits queue index
     
-    def __init__(self, track: AudioTrack, index: int, is_current: bool = False, parent: QWidget = None) -> None:
+    def __init__(self, track: AudioTrack, index: int, is_current: bool = False, read_only: bool = False, parent: QWidget = None) -> None:
         super().__init__(parent)
         self.track = track
         self.index = index
         self.is_current = is_current
+        self.read_only = read_only
         self._drag_start_pos = QPoint()
         self.setAttribute(Qt.WA_StyledBackground, True)
         self._setup_ui()
@@ -56,26 +57,26 @@ class QueueTrackWidget(QFrame):
         
         layout.addLayout(info_layout, 1)
         
-        # Remove button
-        remove_btn = QPushButton("×")
-        remove_btn.setFixedSize(24, 24)
-        remove_btn.setFont(QFont("Segoe UI", 14))
-        remove_btn.setCursor(Qt.PointingHandCursor)
-        remove_btn.setStyleSheet(f"""
-            QPushButton {{
-                background-color: rgba(0, 0, 0, 0.1);
-                color: {TEXT_SECONDARY};
-                border: none;
-                border-radius: 12px;
-            }}
-            QPushButton:hover {{
-                background-color: #e57373;
-                color: white;
-            }}
-        """)
-        remove_btn.clicked.connect(lambda: self.remove_requested.emit(self.index))
-        
-        layout.addWidget(remove_btn)
+        # Remove button (only for editable tracks)
+        if not self.read_only:
+            remove_btn = QPushButton("×")
+            remove_btn.setFixedSize(24, 24)
+            remove_btn.setFont(QFont("Segoe UI", 14))
+            remove_btn.setCursor(Qt.PointingHandCursor)
+            remove_btn.setStyleSheet(f"""
+                QPushButton {{
+                    background-color: rgba(0, 0, 0, 0.1);
+                    color: {TEXT_SECONDARY};
+                    border: none;
+                    border-radius: 12px;
+                }}
+                QPushButton:hover {{
+                    background-color: #e57373;
+                    color: white;
+                }}
+            """)
+            remove_btn.clicked.connect(lambda: self.remove_requested.emit(self.index))
+            layout.addWidget(remove_btn)
         
         # Styling
         bg_color = "rgba(100, 150, 255, 0.15)" if self.is_current else "rgba(0, 0, 0, 0.03)"
@@ -91,17 +92,18 @@ class QueueTrackWidget(QFrame):
                 background-color: {hover_color};
             }}
         """)
-        self.setCursor(Qt.PointingHandCursor)
+        if not self.read_only:
+            self.setCursor(Qt.PointingHandCursor)
         
     def mousePressEvent(self, event) -> None:
         """Handle mouse press for dragging."""
-        if event.button() == Qt.LeftButton:
+        if event.button() == Qt.LeftButton and not self.read_only:
             self._drag_start_pos = event.pos()
         super().mousePressEvent(event)
         
     def mouseMoveEvent(self, event) -> None:
         """Handle mouse move for drag initiation."""
-        if not (event.buttons() & Qt.LeftButton):
+        if self.read_only or not (event.buttons() & Qt.LeftButton):
             return
             
         if (event.pos() - self._drag_start_pos).manhattanLength() < 10:
@@ -240,7 +242,8 @@ class QueueWidget(QWidget):
     def __init__(self, queue_manager: QueueManager, parent: QWidget = None) -> None:
         super().__init__(parent)
         self.queue_manager = queue_manager
-        self.album_groups: Dict[str, AlbumGroupWidget] = {}
+        self.up_next_album_groups: Dict[str, AlbumGroupWidget] = {}
+        self.just_played_album_groups: Dict[str, AlbumGroupWidget] = {}
         self._drag_source_index: Optional[int] = None
         self.setAttribute(Qt.WA_StyledBackground, True)
         self.setAcceptDrops(True)
@@ -249,33 +252,64 @@ class QueueWidget(QWidget):
         
     def _setup_ui(self) -> None:
         """Initialize queue widget UI."""
-        layout = QVBoxLayout(self)
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(0)
+        main_layout = QVBoxLayout(self)
+        main_layout.setContentsMargins(0, 0, 0, 0)
+        main_layout.setSpacing(0)
         
-        # Scrollable area
-        self.scroll_area = QScrollArea()
-        self.scroll_area.setWidgetResizable(True)
-        self.scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        self.scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
-        self.scroll_area.setFrameShape(QFrame.NoFrame)
+        # Up Next Section (Top)
+        up_next_label = QLabel("Up Next")
+        up_next_label.setFont(QFont("Segoe UI", 12, QFont.Bold))
+        up_next_label.setStyleSheet(f"color: {TEXT_PRIMARY}; background: transparent; padding: 12px 16px 8px 16px;")
+        main_layout.addWidget(up_next_label)
         
-        # Content widget
-        self.content_widget = QWidget()
-        self.content_layout = QVBoxLayout(self.content_widget)
-        self.content_layout.setContentsMargins(12, 12, 12, 12)
-        self.content_layout.setSpacing(16)
-        self.content_layout.addStretch()
+        # Up Next scroll area
+        self.up_next_scroll = QScrollArea()
+        self.up_next_scroll.setWidgetResizable(True)
+        self.up_next_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.up_next_scroll.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        self.up_next_scroll.setFrameShape(QFrame.NoFrame)
+        self.up_next_scroll.setAcceptDrops(True)
         
-        self.scroll_area.setWidget(self.content_widget)
-        layout.addWidget(self.scroll_area, 1)
+        self.up_next_content = QWidget()
+        self.up_next_layout = QVBoxLayout(self.up_next_content)
+        self.up_next_layout.setContentsMargins(12, 0, 12, 12)
+        self.up_next_layout.setSpacing(16)
+        self.up_next_layout.addStretch()
         
-        # Empty state
-        self._show_empty_state()
+        self.up_next_scroll.setWidget(self.up_next_content)
+        main_layout.addWidget(self.up_next_scroll, 1)
+        
+        # Divider
+        divider = QFrame()
+        divider.setFrameShape(QFrame.HLine)
+        divider.setStyleSheet("background-color: rgba(0, 0, 0, 0.1); max-height: 2px;")
+        main_layout.addWidget(divider)
+        
+        # Just Played Section (Bottom)
+        just_played_label = QLabel("Just Played")
+        just_played_label.setFont(QFont("Segoe UI", 12, QFont.Bold))
+        just_played_label.setStyleSheet(f"color: {TEXT_SECONDARY}; background: transparent; padding: 8px 16px 8px 16px;")
+        main_layout.addWidget(just_played_label)
+        
+        # Just Played scroll area
+        self.just_played_scroll = QScrollArea()
+        self.just_played_scroll.setWidgetResizable(True)
+        self.just_played_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.just_played_scroll.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        self.just_played_scroll.setFrameShape(QFrame.NoFrame)
+        
+        self.just_played_content = QWidget()
+        self.just_played_layout = QVBoxLayout(self.just_played_content)
+        self.just_played_layout.setContentsMargins(12, 0, 12, 12)
+        self.just_played_layout.setSpacing(16)
+        self.just_played_layout.addStretch()
+        
+        self.just_played_scroll.setWidget(self.just_played_content)
+        main_layout.addWidget(self.just_played_scroll, 1)
         
         # Styling
         self.setStyleSheet("QueueWidget { background: transparent; }")
-        self.scroll_area.setStyleSheet("""
+        scroll_style = """
             QScrollArea {
                 background: transparent;
                 border: none;
@@ -296,7 +330,9 @@ class QueueWidget(QWidget):
             QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
                 height: 0px;
             }
-        """)
+        """
+        self.up_next_scroll.setStyleSheet(scroll_style)
+        self.just_played_scroll.setStyleSheet(scroll_style)
         
     def _connect_signals(self) -> None:
         """Connect queue manager signals."""
@@ -304,22 +340,63 @@ class QueueWidget(QWidget):
         self.queue_manager.current_track_changed.connect(self._on_current_track_changed)
         
     def _refresh_display(self) -> None:
-        """Refresh the queue display with album grouping."""
+        """Refresh the queue display with album grouping in two sections."""
         # Clear existing content
-        while self.content_layout.count() > 1:  # Keep the stretch
-            item = self.content_layout.takeAt(0)
+        while self.up_next_layout.count() > 1:  # Keep the stretch
+            item = self.up_next_layout.takeAt(0)
+            if item.widget():
+                item.widget().deleteLater()
+        
+        while self.just_played_layout.count() > 1:  # Keep the stretch
+            item = self.just_played_layout.takeAt(0)
             if item.widget():
                 item.widget().deleteLater()
                 
-        self.album_groups.clear()
+        self.up_next_album_groups.clear()
+        self.just_played_album_groups.clear()
         
         queue = self.queue_manager.get_queue()
+        current_index = self.queue_manager.get_current_index()
+        
         if not queue:
             self._show_empty_state()
             return
-            
+        
+        # Split queue into sections
+        just_played_tracks = []
+        up_next_tracks = []
+        
+        for idx, track in enumerate(queue):
+            if idx <= current_index:
+                just_played_tracks.append((track, idx))
+            else:
+                up_next_tracks.append((track, idx))
+        
+        # Render Up Next section
+        if up_next_tracks:
+            self._render_section(up_next_tracks, self.up_next_layout, self.up_next_album_groups, False, current_index)
+        else:
+            empty_label = QLabel("No upcoming tracks")
+            empty_label.setAlignment(Qt.AlignCenter)
+            empty_label.setFont(QFont("Segoe UI", 10))
+            empty_label.setStyleSheet(f"color: {TEXT_MUTED}; background: transparent; padding: 40px;")
+            self.up_next_layout.insertWidget(0, empty_label)
+        
+        # Render Just Played section (in reverse order - most recent first)
+        if just_played_tracks:
+            just_played_tracks.reverse()
+            self._render_section(just_played_tracks, self.just_played_layout, self.just_played_album_groups, True, current_index)
+        else:
+            empty_label = QLabel("No played tracks yet")
+            empty_label.setAlignment(Qt.AlignCenter)
+            empty_label.setFont(QFont("Segoe UI", 10))
+            empty_label.setStyleSheet(f"color: {TEXT_MUTED}; background: transparent; padding: 40px;")
+            self.just_played_layout.insertWidget(0, empty_label)
+    
+    def _render_section(self, tracks: List[tuple[AudioTrack, int]], layout: QVBoxLayout, 
+                       album_groups_dict: Dict[str, AlbumGroupWidget], read_only: bool, current_index: int) -> None:
+        """Render a section (Up Next or Just Played) with album grouping."""
         # Group adjacent tracks by album
-        current_index = self.queue_manager.get_current_index()
         album_groups: List[tuple[str, str, List[tuple[AudioTrack, int]]]] = []
         
         current_group_key = None
@@ -327,7 +404,7 @@ class QueueWidget(QWidget):
         current_group_artist = None
         current_group_tracks = []
         
-        for idx, track in enumerate(queue):
+        for track, idx in tracks:
             album_key = f"{track.album}|{track.artist}"
             
             # Start new group if album changes or first track
@@ -350,26 +427,29 @@ class QueueWidget(QWidget):
             album_groups.append((current_group_name, current_group_artist, current_group_tracks))
             
         # Create album group widgets
-        for album_name, artist_name, tracks in album_groups:
+        for album_name, artist_name, album_tracks in album_groups:
             # Get album art from first track in album
             album_art_pixmap = None
-            if tracks[0][0].album_art_data:
-                album_art_pixmap = self._load_album_art(tracks[0][0].album_art_data)
+            if album_tracks[0][0].album_art_data:
+                album_art_pixmap = self._load_album_art(album_tracks[0][0].album_art_data)
             
             album_group = AlbumGroupWidget(album_name, artist_name, album_art_pixmap)
             
             # Add tracks to group
-            for track, idx in tracks:
+            for track, idx in album_tracks:
                 is_current = (idx == current_index)
-                track_widget = QueueTrackWidget(track, idx, is_current)
-                track_widget.track_clicked.connect(self.track_double_clicked.emit)
-                track_widget.remove_requested.connect(self._on_remove_track)
-                track_widget.drag_started.connect(self._on_drag_started)
+                track_widget = QueueTrackWidget(track, idx, is_current, read_only)
+                if not read_only:
+                    track_widget.track_clicked.connect(self.track_double_clicked.emit)
+                    track_widget.remove_requested.connect(self._on_remove_track)
+                    track_widget.drag_started.connect(self._on_drag_started)
+                else:
+                    track_widget.track_clicked.connect(self.track_double_clicked.emit)
                 album_group.add_track_widget(track_widget)
                 
             album_key = f"{album_name}|{artist_name}"
-            self.album_groups[album_key] = album_group
-            self.content_layout.insertWidget(self.content_layout.count() - 1, album_group)
+            album_groups_dict[album_key] = album_group
+            layout.insertWidget(layout.count() - 1, album_group)
             
     def _show_empty_state(self) -> None:
         """Show empty queue message."""
@@ -378,7 +458,7 @@ class QueueWidget(QWidget):
         empty_label.setFont(QFont("Segoe UI", 11))
         empty_label.setStyleSheet(f"color: {TEXT_SECONDARY}; background: transparent; padding: 60px;")
         empty_label.setWordWrap(True)
-        self.content_layout.insertWidget(0, empty_label)
+        self.up_next_layout.insertWidget(0, empty_label)
         
     def _on_remove_track(self, index: int) -> None:
         """Handle track removal request."""
@@ -420,7 +500,12 @@ class QueueWidget(QWidget):
         """Handle drop for reordering tracks or adding from library."""
         mime_data = event.mimeData()
         
-        # Handle adding single track from library
+        # Check if drop is in Up Next section
+        drop_pos = event.position().toPoint()
+        up_next_rect = self.up_next_scroll.geometry()
+        in_up_next = up_next_rect.contains(drop_pos)
+        
+        # Handle adding single track from library (only to Up Next)
         if mime_data.hasFormat("application/x-audiotrack"):
             import pickle
             try:
@@ -436,7 +521,7 @@ class QueueWidget(QWidget):
             except Exception as e:
                 print(f"Error adding track: {e}")
                 
-        # Handle adding album/multiple tracks from library
+        # Handle adding album/multiple tracks from library (only to Up Next)
         if mime_data.hasFormat("application/x-audiotrack-list"):
             import pickle
             try:
@@ -453,24 +538,32 @@ class QueueWidget(QWidget):
             except Exception as e:
                 print(f"Error adding tracks: {e}")
         
-        # Handle reordering within queue
-        if mime_data.hasText() and self._drag_source_index is not None:
-            # Find drop position
-            drop_pos = event.position().toPoint()
-            target_widget = self.childAt(drop_pos)
+        # Handle reordering within queue (only in Up Next section)
+        if mime_data.hasText() and self._drag_source_index is not None and in_up_next:
+            current_index = self.queue_manager.get_current_index()
             
-            # Find the target track widget
-            target_index = None
-            for album_group in self.album_groups.values():
-                for track_widget in album_group.track_widgets:
-                    if track_widget.geometry().contains(track_widget.parent().mapFrom(self, drop_pos)):
-                        target_index = track_widget.index
-                        break
-                if target_index is not None:
-                    break
-                    
-            if target_index is not None and target_index != self._drag_source_index:
-                self.queue_manager.move_track(self._drag_source_index, target_index)
+            # Only allow reordering if source is from Up Next (after current)
+            if self._drag_source_index > current_index:
+                # Find drop position in Up Next section
+                up_next_content_pos = self.up_next_content.mapFrom(self, drop_pos)
+                target_index = None
                 
+                for album_group in self.up_next_album_groups.values():
+                    for track_widget in album_group.track_widgets:
+                        widget_pos = track_widget.mapTo(self.up_next_content, QPoint(0, 0))
+                        widget_rect = track_widget.geometry()
+                        widget_rect.moveTo(widget_pos)
+                        
+                        if widget_rect.contains(up_next_content_pos):
+                            target_index = track_widget.index
+                            break
+                    if target_index is not None:
+                        break
+                        
+                if target_index is not None and target_index != self._drag_source_index:
+                    # Only move if both are in Up Next
+                    if target_index > current_index:
+                        self.queue_manager.move_track(self._drag_source_index, target_index)
+                    
             self._drag_source_index = None
             event.acceptProposedAction()
