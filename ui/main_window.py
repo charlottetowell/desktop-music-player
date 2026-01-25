@@ -116,6 +116,9 @@ class MainWindow(QMainWindow):
         self.setWindowFlags(Qt.FramelessWindowHint)
         self.setAttribute(Qt.WA_TranslucentBackground, False)
         
+        # Will be set when media controller is initialized
+        self._media_controller = None
+        
     def _setup_ui(self) -> None:
         """Initialize UI components."""
         # Central widget
@@ -143,6 +146,9 @@ class MainWindow(QMainWindow):
         # Main window styling - keep minimal to not override panel colors
         central.setStyleSheet(f"background-color: {BG_PANEL};")
         
+        # Store reference to media controller for nativeEvent handling
+        self._media_controller = self.home_screen.media_controller
+        
     def center_on_screen(self) -> None:
         """Center the main window on the primary display."""
         screen = self.screen().geometry()
@@ -151,11 +157,35 @@ class MainWindow(QMainWindow):
             screen.center().y() - self.height() // 2
         )
     
+    def nativeEvent(self, eventType, message):
+        """Handle native Windows events for media key support."""
+        try:
+            # Check if we have a media controller and it's Windows-based
+            if self._media_controller and hasattr(self._media_controller, 'handle_windows_message'):
+                # On Windows, eventType is b'windows_generic_MSG' or similar
+                if eventType == b'windows_generic_MSG' or b'windows' in eventType.lower():
+                    import ctypes
+                    # Parse Windows message
+                    msg = ctypes.wintypes.MSG.from_address(int(message))
+                    
+                    # Let the controller handle it
+                    if self._media_controller.handle_windows_message(msg.message, msg.wParam, msg.lParam):
+                        # Message was handled, return True to prevent further processing
+                        return True, 0
+        except Exception as e:
+            # Silently fail - don't break the app if native event handling fails
+            pass
+            
+        # Let Qt handle the event normally
+        return super().nativeEvent(eventType, message)
+    
     def closeEvent(self, event) -> None:
-        """Handle window close event - save queue before closing."""
+        """Handle window close event - save queue and cleanup."""
         try:
             # Save the current queue state
             self.home_screen.save_queue()
+            # Cleanup media controller
+            self.home_screen.media_controller.cleanup()
         except Exception as e:
-            print(f"Error saving queue on close: {e}")
+            print(f"Error during cleanup on close: {e}")
         event.accept()

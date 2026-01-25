@@ -13,6 +13,7 @@ from ui.widgets.playback_controls_widget import PlaybackControlsWidget
 from core.queue_manager import QueueManager
 from core.audio_engine import AudioEngine
 from core.settings import Settings
+from core.media_controller import create_media_controller
 
 
 class HomeScreen(QWidget):
@@ -24,8 +25,12 @@ class HomeScreen(QWidget):
         self.queue_manager = QueueManager()
         self.audio_engine = AudioEngine()
         self.settings = Settings()
+        self.media_controller = create_media_controller()
         self._setup_ui()
         self._connect_audio_signals()
+        # Delay media controller setup until window is shown
+        from PySide6.QtCore import QTimer
+        QTimer.singleShot(500, self._setup_media_controller)
         self._restore_queue()
         
     def _setup_ui(self) -> None:
@@ -276,3 +281,62 @@ class HomeScreen(QWidget):
             print(f"Queue saved with {len(serialized_queue)} tracks, index {current_index}")
         except Exception as e:
             print(f"Could not save queue: {e}")
+            
+    def _setup_media_controller(self) -> None:
+        """Initialize and connect media controller for OS media keys."""
+        try:
+            # Register with OS (may fail initially on Windows, will retry on first use)
+            if self.media_controller.register():
+                print("Media controller registered successfully")
+            else:
+                print("Media controller registration deferred - will retry on first playback")
+                
+            # Connect media key signals to playback methods
+            self.media_controller.play_pause_requested.connect(self._on_play_pause)
+            self.media_controller.next_requested.connect(self._on_next)
+            self.media_controller.previous_requested.connect(self._on_previous)
+            self.media_controller.stop_requested.connect(self._on_media_stop)
+            
+            # Connect audio engine signals to update media controller
+            self.audio_engine.playback_started.connect(self._on_media_playback_started)
+            self.audio_engine.playback_paused.connect(self._on_media_playback_paused)
+            self.audio_engine.playback_resumed.connect(self._on_media_playback_resumed)
+            self.audio_engine.playback_stopped.connect(self._on_media_playback_stopped)
+            self.audio_engine.playback_finished.connect(self._on_media_playback_stopped)
+        except Exception as e:
+            print(f"Failed to setup media controller: {e}")
+            import traceback
+            traceback.print_exc()
+            
+    def _on_media_stop(self) -> None:
+        """Handle stop request from media keys."""
+        self.audio_engine.stop()
+        
+    def _on_media_playback_started(self, track) -> None:
+        """Update media controller when playback starts."""
+        try:
+            self.media_controller.update_track(track)
+            self.media_controller.update_state(is_playing=True, is_paused=False)
+        except Exception as e:
+            print(f"Failed to update media controller on playback start: {e}")
+            
+    def _on_media_playback_paused(self) -> None:
+        """Update media controller when playback pauses."""
+        try:
+            self.media_controller.update_state(is_playing=False, is_paused=True)
+        except Exception as e:
+            print(f"Failed to update media controller on pause: {e}")
+            
+    def _on_media_playback_resumed(self) -> None:
+        """Update media controller when playback resumes."""
+        try:
+            self.media_controller.update_state(is_playing=True, is_paused=False)
+        except Exception as e:
+            print(f"Failed to update media controller on resume: {e}")
+            
+    def _on_media_playback_stopped(self) -> None:
+        """Update media controller when playback stops."""
+        try:
+            self.media_controller.update_state(is_playing=False, is_paused=False)
+        except Exception as e:
+            print(f"Failed to update media controller on stop: {e}")

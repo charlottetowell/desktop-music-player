@@ -5,6 +5,11 @@ A cross-platform desktop audio player with real-time visualization, built with P
 ## Features
 
 - **Cross-Platform**: Windows & Linux support
+- **OS Media Key Integration**: Control playback with your keyboard media keys
+  - Play/Pause, Next, Previous, Stop support
+  - Works with any keyboard shortcuts configured in your OS
+  - **Windows**: Uses Qt shortcuts for media keys (all Windows versions)
+  - **Linux**: MPRIS D-Bus integration for desktop environments (GNOME, KDE, etc.)
 - **Modern UI**: Frameless, transparent window with custom title bar
 - **Audio Playback**: Full playback engine with play/pause/skip controls
   - Real-time progress bar and position tracking
@@ -36,6 +41,8 @@ A cross-platform desktop audio player with real-time visualization, built with P
 - **Metadata**: mutagen (audio file tag reading)
 - **Audio Analysis**: librosa for frequency analysis and FFT
 - **DSP/Visualization**: numpy for real-time PCM data processing
+- **Media Keys (Windows)**: Qt QShortcut for media key support
+- **Media Keys (Linux)**: dbus-python for MPRIS2 integration
 - **Concurrency**: Worker threads for audio decoding, playback, and analysis
 
 ## Project Structure
@@ -43,6 +50,11 @@ A cross-platform desktop audio player with real-time visualization, built with P
 ```
 desktop-music-player/
 ├── core/              # Audio engine and backend logic
+│   ├── audio_engine.py           # Playback engine
+│   ├── media_controller.py       # OS media key integration (base)
+│   ├── media_controller_windows.py  # Windows media keys
+│   ├── media_controller_linux.py    # Linux MPRIS
+│   └── ...
 ├── ui/                # GUI components
 │   ├── widgets/       # Custom Qt widgets
 │   │   ├── audio_visualizer_widget.py  # Real-time visualizer
@@ -64,6 +76,8 @@ desktop-music-player/
 
 - Python 3.8 or higher
 - pip package manager
+- **Windows**: Windows 7 or later (media keys work on all versions)
+- **Linux**: D-Bus installed (standard on most distros)
 
 ### Installation Steps
 
@@ -88,6 +102,10 @@ desktop-music-player/
    ```bash
    pip install -r requirements.txt
    ```
+   
+   Platform-specific dependencies will be installed automatically:
+   - Windows: Qt shortcuts (built-in, no extra packages)
+   - Linux: `dbus-python` for MPRIS integration
 
 ### Running Locally
 
@@ -97,6 +115,7 @@ python main.py
 
 ## Dependencies
 
+Core dependencies:
 - **PySide6**: Qt framework for Python
 - **miniaudio**: Cross-platform audio playback
 - **mutagen**: Audio metadata extraction and album art
@@ -104,10 +123,32 @@ python main.py
 - **librosa**: Audio analysis and feature extraction
 - **soundfile**: Audio file I/O for librosa
 
+Platform-specific (auto-installed):
+- **winsdk** (Windows): System Media Transport Controls (currently optional)
+- **dbus-python** (Linux): MPRIS D-Bus integration
+
 Install all dependencies via:
 ```bash
 pip install -r requirements.txt
 ```
+
+## Media Key Support
+
+### Windows
+Media keys work out of the box using Qt's built-in shortcut system:
+- Play/Pause ▶⏸
+- Next ⏭
+- Previous ⏮
+- Stop ⏹
+
+Compatible with all keyboards and Windows versions. Your configured media key shortcuts will work automatically.
+
+### Linux
+Uses MPRIS2 D-Bus interface for desktop integration:
+- Works with GNOME, KDE, and other desktop environments
+- Shows track metadata in system media controls
+- Integrates with lock screen and notification area media controls
+- Keyboard media keys trigger the player automatically
 
 ## Audio Visualizer
 
