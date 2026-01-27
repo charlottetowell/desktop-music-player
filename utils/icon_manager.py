@@ -83,11 +83,11 @@ class IconManager:
 
 
 # Convenience functions
-def load_icon(name: str, category: str = "") -> QIcon:
+def load_icon(name: str) -> QIcon:
     """Convenience function to load an icon."""
-    return IconManager.get_icon(name, category)
+    return IconManager.get_icon(name)
 
 
-def load_pixmap(name: str, size: int = 24, category: str = "") -> QPixmap:
+def load_pixmap(name: str, size: int = 24,) -> QPixmap:
     """Convenience function to load an icon as pixmap."""
-    return IconManager.get_pixmap(name, size, category)
+    return IconManager.get_pixmap(name, size)

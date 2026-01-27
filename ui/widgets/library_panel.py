@@ -110,7 +110,7 @@ class LibraryPanel(QWidget):
         self.folder_btn.setToolTip("Select music folder")
         
         # Try to load folder icon
-        folder_icon = load_icon("folder", category="media")
+        folder_icon = load_icon("folder")
         if not folder_icon.isNull():
             self.folder_btn.setIcon(folder_icon)
             self.folder_btn.setIconSize(self.folder_btn.size() * 0.65)

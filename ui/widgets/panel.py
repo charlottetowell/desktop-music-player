@@ -50,22 +50,23 @@ class Panel(QWidget):
                 from PySide6.QtWidgets import QPushButton
                 from PySide6.QtCore import Signal
                 from ui.themes.colors import ACCENT_LAVENDER
+                from utils.icon_manager import IconManager
                 
-                self.mini_player_btn = QPushButton("⛶")
-                self.mini_player_btn.setFont(FontManager.get_title_font(18))
+                self.mini_player_btn = QPushButton()
+                self.mini_player_btn.setIcon(IconManager.get_icon("miniplayer"))
                 self.mini_player_btn.setCursor(Qt.PointingHandCursor)
                 self.mini_player_btn.setFixedSize(36, 36)
+                self.mini_player_btn.setIconSize(self.mini_player_btn.size() * 0.7)
                 self.mini_player_btn.setStyleSheet(f"""
                     QPushButton {{
                         background-color: transparent;
                         color: {TEXT_PRIMARY};
-                        border: 2px solid {TEXT_PRIMARY};
+                        border: none;
                         border-radius: 6px;
                         padding: 0px;
                     }}
                     QPushButton:hover {{
                         background-color: rgba(255, 255, 255, 0.1);
-                        border-color: {ACCENT_LAVENDER};
                         color: {ACCENT_LAVENDER};
                     }}
                     QPushButton:pressed {{

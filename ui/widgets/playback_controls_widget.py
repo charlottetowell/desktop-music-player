@@ -6,6 +6,7 @@ from PySide6.QtWidgets import QWidget, QHBoxLayout, QPushButton
 from PySide6.QtCore import Qt, Signal
 from ui.themes.colors import TEXT_PRIMARY, ACCENT_LAVENDER
 from ui.themes.fonts import FontManager
+from utils.icon_manager import IconManager
 
 
 class PlaybackControlsWidget(QWidget):
@@ -49,13 +50,12 @@ class PlaybackControlsWidget(QWidget):
             QPushButton {{
                 background-color: transparent;
                 color: {TEXT_PRIMARY};
-                border: 2px solid {TEXT_PRIMARY};
+                border: none;
                 border-radius: 28px;
                 font-size: 22px;
             }}
             QPushButton:hover {{
                 background-color: rgba(183, 148, 246, 0.2);
-                border-color: {ACCENT_LAVENDER};
                 color: {ACCENT_LAVENDER};
             }}
             QPushButton:pressed {{
@@ -64,27 +64,30 @@ class PlaybackControlsWidget(QWidget):
         """
         
         # Previous button
-        self.prev_btn = QPushButton("◀")
+        self.prev_btn = QPushButton()
+        self.prev_btn.setIcon(IconManager.get_icon("track-prev"))
         self.prev_btn.setFixedSize(48, 48)
-        self.prev_btn.setFont(FontManager.get_title_font(16))
+        self.prev_btn.setIconSize(self.prev_btn.size() * 0.6)
         self.prev_btn.setCursor(Qt.PointingHandCursor)
         self.prev_btn.setStyleSheet(button_style)
         self.prev_btn.setToolTip("Previous track")
         self.prev_btn.clicked.connect(self.previous_clicked.emit)
         
         # Play/Pause button (larger)
-        self.play_pause_btn = QPushButton("▶")
+        self.play_pause_btn = QPushButton()
+        self.play_pause_btn.setIcon(IconManager.get_icon("play"))
         self.play_pause_btn.setFixedSize(56, 56)
-        self.play_pause_btn.setFont(FontManager.get_title_font(20))
+        self.play_pause_btn.setIconSize(self.play_pause_btn.size() * 0.65)
         self.play_pause_btn.setCursor(Qt.PointingHandCursor)
         self.play_pause_btn.setStyleSheet(large_button_style)
         self.play_pause_btn.setToolTip("Play")
         self.play_pause_btn.clicked.connect(self.play_pause_clicked.emit)
         
         # Next button
-        self.next_btn = QPushButton("▶")
+        self.next_btn = QPushButton()
+        self.next_btn.setIcon(IconManager.get_icon("track-next"))
         self.next_btn.setFixedSize(48, 48)
-        self.next_btn.setFont(FontManager.get_title_font(16))
+        self.next_btn.setIconSize(self.next_btn.size() * 0.6)
         self.next_btn.setCursor(Qt.PointingHandCursor)
         self.next_btn.setStyleSheet(button_style)
         self.next_btn.setToolTip("Next track")
@@ -100,10 +103,10 @@ class PlaybackControlsWidget(QWidget):
         """Update play/pause button state."""
         self.is_playing = playing
         if playing:
-            self.play_pause_btn.setText("⏸")
+            self.play_pause_btn.setIcon(IconManager.get_icon("pause"))
             self.play_pause_btn.setToolTip("Pause")
         else:
-            self.play_pause_btn.setText("▶")
+            self.play_pause_btn.setIcon(IconManager.get_icon("play"))
             self.play_pause_btn.setToolTip("Play")
             
     def set_enabled(self, enabled: bool) -> None:
