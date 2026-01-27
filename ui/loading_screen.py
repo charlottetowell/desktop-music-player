@@ -5,7 +5,7 @@ Loading screen widget with progress indicator
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel, QProgressBar
 from PySide6.QtCore import Qt, QTimer, Signal
 from PySide6.QtGui import QFont
-from ui.themes.colors import PRIMARY_PEACH, TEXT_PRIMARY, TEXT_SECONDARY, BG_PANEL
+from ui.themes.colors import ACCENT_LAVENDER, TEXT_PRIMARY, TEXT_SECONDARY, BG_PANEL
 
 
 class LoadingScreen(QWidget):
@@ -56,7 +56,7 @@ class LoadingScreen(QWidget):
                 border: none;
             }}
             QProgressBar::chunk {{
-                background-color: {PRIMARY_PEACH};
+                background-color: {ACCENT_LAVENDER};
                 border-radius: 2px;
             }}
         """)

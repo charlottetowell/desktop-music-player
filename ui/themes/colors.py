@@ -2,46 +2,55 @@
 Global color definitions for the application
 """
 
-# Primary Colors
-PRIMARY_PEACH = "#fec5bb"
-PRIMARY_LIGHT = "#f8edeb"
-PRIMARY_CREAM = "#fae1dd"
-PRIMARY_ROSE = "#fcd5ce"
+# Primary Colors - Deep Purple Theme
+PRIMARY_PURPLE = "#3d1f5c"
+PRIMARY_DEEP = "#1a0a2e"
+PRIMARY_DARK = "#2b1548"
+PRIMARY_LAVENDER = "#b794f6"
 
 # Background Colors
-BG_DARK = "#121212"
-BG_SIDEBAR = PRIMARY_PEACH
-BG_MAIN = PRIMARY_LIGHT
-BG_PANEL = "#ffffff"
+BG_DARK = "#0f0520"
+BG_DEEP_PURPLE = "#1a0a2e"
+BG_MID_PURPLE = "#2b1548"
+BG_PANEL = "#3d1f5c"
+BG_SIDEBAR = PRIMARY_PURPLE
+BG_MAIN = PRIMARY_DEEP
 
 # Text Colors
-TEXT_PRIMARY = "#2b2b2b"
-TEXT_SECONDARY = "#5c5c5c"
-TEXT_MUTED = "#8e8e8e"
+TEXT_PRIMARY = "#ffffff"
+TEXT_SECONDARY = "#d4c5f9"
+TEXT_MUTED = "#9d82db"
 TEXT_LIGHT = "#ffffff"
 
 # Accent Colors
-ACCENT_PRIMARY = "#e8b4b8"
-ACCENT_HOVER = "#f4d4d7"
-ACCENT_PRESSED = "#d99fa5"
+ACCENT_LAVENDER = "#b794f6"
+ACCENT_PINK = "#ff6b9d"
+ACCENT_CORAL = "#ff7b7b"
+ACCENT_GREEN = "#5edb8d"
+ACCENT_HOVER = "#c9a9ff"
+ACCENT_PRESSED = "#9d7ed9"
 
 # Border Colors
-BORDER_LIGHT = "#e6e6e6"
-BORDER_MEDIUM = "#d4d4d4"
-BORDER_DARK = "#b8b8b8"
+BORDER_LIGHT = "rgba(183, 148, 246, 0.2)"
+BORDER_MEDIUM = "rgba(183, 148, 246, 0.3)"
+BORDER_DARK = "rgba(183, 148, 246, 0.5)"
 
 # Status Colors
-STATUS_SUCCESS = "#82c785"
-STATUS_WARNING = "#f4b860"
-STATUS_ERROR = "#e57373"
-STATUS_INFO = "#64b5f6"
+STATUS_SUCCESS = "#5edb8d"
+STATUS_WARNING = "#ffb86c"
+STATUS_ERROR = "#ff6b9d"
+STATUS_INFO = "#b794f6"
 
 # UI Element Colors
-SCROLLBAR_BG = "rgba(0, 0, 0, 0.05)"
-SCROLLBAR_HANDLE = "rgba(0, 0, 0, 0.2)"
-SCROLLBAR_HANDLE_HOVER = "rgba(0, 0, 0, 0.3)"
+SCROLLBAR_BG = "rgba(183, 148, 246, 0.1)"
+SCROLLBAR_HANDLE = "rgba(183, 148, 246, 0.3)"
+SCROLLBAR_HANDLE_HOVER = "rgba(183, 148, 246, 0.5)"
 
 # Shadow Colors
-SHADOW_LIGHT = "rgba(0, 0, 0, 0.05)"
-SHADOW_MEDIUM = "rgba(0, 0, 0, 0.1)"
-SHADOW_HEAVY = "rgba(0, 0, 0, 0.2)"
+SHADOW_LIGHT = "rgba(0, 0, 0, 0.3)"
+SHADOW_MEDIUM = "rgba(0, 0, 0, 0.5)"
+SHADOW_HEAVY = "rgba(0, 0, 0, 0.7)"
+
+# Waveform/Visualizer Colors
+WAVEFORM_PRIMARY = "#b794f6"
+WAVEFORM_SECONDARY = "#9d7ed9"

@@ -8,6 +8,7 @@ from PySide6.QtWidgets import QApplication
 from PySide6.QtCore import QTimer
 from ui.loading_screen import LoadingScreen
 from ui.main_window import MainWindow
+from ui.themes import font_manager
 
 
 def main() -> int:
@@ -15,6 +16,9 @@ def main() -> int:
     app = QApplication(sys.argv)
     app.setApplicationName("Desktop Music Player")
     app.setOrganizationName("DesktopMusicPlayer")
+    
+    # Load custom fonts AFTER QApplication is initialized
+    font_manager.load_fonts()
     
     # Create main window (hidden initially)
     main_window = MainWindow()
