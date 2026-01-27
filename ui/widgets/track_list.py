@@ -7,7 +7,8 @@ import re
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QPushButton, 
                                QScrollArea, QLabel, QFrame, QLineEdit)
 from PySide6.QtCore import Qt, Signal, QTimer, QPoint, QMimeData
-from ui.themes.colors import TEXT_PRIMARY, TEXT_SECONDARY, ACCENT_HOVER
+from ui.themes.colors import (TEXT_PRIMARY, TEXT_SECONDARY, ACCENT_HOVER, 
+                               ACCENT_LAVENDER, BORDER_LIGHT)
 from ui.themes.fonts import FontManager
 from core.audio_scanner import AudioTrack
 
@@ -29,28 +30,28 @@ class GroupButton(QPushButton):
         if self.isChecked():
             self.setStyleSheet(f"""
                 QPushButton {{
-                    background-color: rgba(0, 0, 0, 0.15);
+                    background-color: {ACCENT_LAVENDER};
                     color: {TEXT_PRIMARY};
                     border: none;
-                    border-radius: 4px;
-                    padding: 6px 12px;
+                    border-radius: 6px;
+                    padding: 6px 14px;
                     font-weight: 600;
                 }}
                 QPushButton:hover {{
-                    background-color: rgba(0, 0, 0, 0.2);
+                    background-color: {ACCENT_HOVER};
                 }}
             """)
         else:
             self.setStyleSheet(f"""
                 QPushButton {{
-                    background-color: rgba(255, 255, 255, 0.3);
+                    background-color: rgba(183, 148, 246, 0.15);
                     color: {TEXT_SECONDARY};
                     border: none;
-                    border-radius: 4px;
-                    padding: 6px 12px;
+                    border-radius: 6px;
+                    padding: 6px 14px;
                 }}
                 QPushButton:hover {{
-                    background-color: {ACCENT_HOVER};
+                    background-color: rgba(183, 148, 246, 0.25);
                     color: {TEXT_PRIMARY};
                 }}
             """)
@@ -93,8 +94,8 @@ class TrackItemWidget(QFrame):
         
         self.setStyleSheet(f"""
             TrackItemWidget {{
-                background-color: rgba(255, 255, 255, 0.15);
-                border-radius: 4px;
+                background-color: rgba(183, 148, 246, 0.1);
+                border-radius: 6px;
             }}
             TrackItemWidget:hover {{
                 background-color: {ACCENT_HOVER};
@@ -171,8 +172,8 @@ class GroupHeaderWidget(QFrame):
         
         # Group name
         name_label = QLabel(group_name)
-        name_label.setFont(FontManager.get_title_font(11))
-        name_label.setStyleSheet(f"color: {TEXT_PRIMARY}; background: transparent;")
+        name_label.setFont(FontManager.get_title_font(12))
+        name_label.setStyleSheet(f"color: {TEXT_PRIMARY}; background: transparent; font-weight: 700;")
         
         # Track count
         count_label = QLabel(f"{track_count} track{'s' if track_count != 1 else ''}")
@@ -180,17 +181,18 @@ class GroupHeaderWidget(QFrame):
         count_label.setStyleSheet(f"color: {TEXT_SECONDARY}; background: transparent;")
         
         # Add album button
-        add_btn = QPushButton("+ Add Album")
-        add_btn.setFixedHeight(24)
+        add_btn = QPushButton("+ Add")
+        add_btn.setFixedHeight(28)
         add_btn.setFont(FontManager.get_small_font(9))
         add_btn.setCursor(Qt.PointingHandCursor)
         add_btn.setStyleSheet(f"""
             QPushButton {{
-                background-color: rgba(0, 0, 0, 0.1);
+                background-color: {ACCENT_LAVENDER};
                 color: {TEXT_PRIMARY};
                 border: none;
-                border-radius: 4px;
-                padding: 4px 12px;
+                border-radius: 6px;
+                padding: 4px 14px;
+                font-weight: 600;
             }}
             QPushButton:hover {{
                 background-color: {ACCENT_HOVER};
@@ -273,13 +275,13 @@ class TrackListWidget(QWidget):
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
         
+        # Group buttons ("By" toggles) - moved to top
+        button_container = self._create_group_buttons()
+        layout.addWidget(button_container)
+        
         # Search bar
         search_container = self._create_search_bar()
         layout.addWidget(search_container)
-        
-        # Group buttons
-        button_container = self._create_group_buttons()
-        layout.addWidget(button_container)
         
         # Scrollable track list
         self.scroll_area = QScrollArea()
@@ -291,7 +293,7 @@ class TrackListWidget(QWidget):
         # Content widget for tracks
         self.content_widget = QWidget()
         self.content_layout = QVBoxLayout(self.content_widget)
-        self.content_layout.setContentsMargins(12, 12, 12, 12)
+        self.content_layout.setContentsMargins(12, 8, 12, 12)
         self.content_layout.setSpacing(4)
         self.content_layout.addStretch()
         
@@ -306,17 +308,17 @@ class TrackListWidget(QWidget):
                 border: none;
             }
             QScrollBar:vertical {
-                background: rgba(0, 0, 0, 0.05);
-                width: 10px;
-                border-radius: 5px;
+                background: rgba(183, 148, 246, 0.1);
+                width: 8px;
+                border-radius: 4px;
             }
             QScrollBar::handle:vertical {
-                background: rgba(0, 0, 0, 0.2);
-                border-radius: 5px;
+                background: rgba(183, 148, 246, 0.3);
+                border-radius: 4px;
                 min-height: 20px;
             }
             QScrollBar::handle:vertical:hover {
-                background: rgba(0, 0, 0, 0.3);
+                background: rgba(183, 148, 246, 0.5);
             }
             QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
                 height: 0px;
@@ -330,27 +332,27 @@ class TrackListWidget(QWidget):
         container.setStyleSheet("background: transparent;")
         
         layout = QHBoxLayout(container)
-        layout.setContentsMargins(12, 12, 12, 8)
+        layout.setContentsMargins(16, 8, 16, 12)
         
         # Search input
         self.search_input = QLineEdit()
-        self.search_input.setPlaceholderText("Search tracks, artists, albums...")
+        self.search_input.setPlaceholderText("Search...")
         self.search_input.setFont(FontManager.get_body_font(10))
-        self.search_input.setFixedHeight(36)
+        self.search_input.setFixedHeight(38)
         self.search_input.textChanged.connect(self._on_search_changed)
         self.search_input.setClearButtonEnabled(True)
         
         self.search_input.setStyleSheet(f"""
             QLineEdit {{
-                background-color: rgba(255, 255, 255, 0.5);
+                background-color: rgba(183, 148, 246, 0.15);
                 color: {TEXT_PRIMARY};
-                border: 2px solid rgba(0, 0, 0, 0.1);
-                border-radius: 18px;
-                padding: 6px 16px;
+                border: 1px solid {BORDER_LIGHT};
+                border-radius: 8px;
+                padding: 8px 16px;
             }}
             QLineEdit:focus {{
-                background-color: rgba(255, 255, 255, 0.7);
-                border-color: rgba(0, 0, 0, 0.2);
+                background-color: rgba(183, 148, 246, 0.2);
+                border-color: {ACCENT_LAVENDER};
             }}
             QLineEdit::placeholder {{
                 color: {TEXT_SECONDARY};
@@ -367,14 +369,29 @@ class TrackListWidget(QWidget):
         self._refresh_display()
         
     def _create_group_buttons(self) -> QWidget:
-        """Create group selection buttons."""
+        """Create group selection buttons (By Album/Artist/Year/Folder)."""
         container = QWidget()
         container.setAttribute(Qt.WA_StyledBackground, True)
         container.setStyleSheet("background: transparent;")
         
-        layout = QHBoxLayout(container)
-        layout.setContentsMargins(12, 12, 12, 8)
-        layout.setSpacing(6)
+        layout = QVBoxLayout(container)
+        layout.setContentsMargins(16, 16, 16, 8)
+        layout.setSpacing(8)
+        
+        # "By" label
+        by_label = QLabel("BY")
+        by_label.setFont(FontManager.get_small_font(10))
+        by_label.setStyleSheet(f"""
+            color: {TEXT_SECONDARY}; 
+            background: transparent;
+            font-weight: 600;
+            letter-spacing: 1px;
+        """)
+        layout.addWidget(by_label)
+        
+        # Buttons container
+        buttons_layout = QHBoxLayout()
+        buttons_layout.setSpacing(6)
         
         # Create buttons
         self.album_btn = GroupButton("Album")
@@ -391,11 +408,12 @@ class TrackListWidget(QWidget):
         self.year_btn.clicked.connect(lambda: self._change_group_mode("year"))
         self.folder_btn.clicked.connect(lambda: self._change_group_mode("folder"))
         
-        layout.addWidget(self.album_btn)
-        layout.addWidget(self.artist_btn)
-        layout.addWidget(self.year_btn)
-        layout.addWidget(self.folder_btn)
-        layout.addStretch()
+        buttons_layout.addWidget(self.album_btn)
+        buttons_layout.addWidget(self.artist_btn)
+        buttons_layout.addWidget(self.year_btn)
+        buttons_layout.addWidget(self.folder_btn)
+        
+        layout.addLayout(buttons_layout)
         
         return container
         

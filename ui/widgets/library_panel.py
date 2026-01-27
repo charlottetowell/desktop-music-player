@@ -7,7 +7,9 @@ from pathlib import Path
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QFileDialog
 from PySide6.QtCore import Qt, Signal, QThread
 from PySide6.QtGui import QIcon
-from ui.themes.colors import TEXT_PRIMARY, TEXT_SECONDARY, TEXT_MUTED, ACCENT_HOVER
+from ui.themes.colors import (TEXT_PRIMARY, TEXT_SECONDARY, TEXT_MUTED, 
+                               ACCENT_HOVER, BG_SIDEBAR, ACCENT_LAVENDER, 
+                               BORDER_LIGHT)
 from ui.themes.fonts import FontManager
 from ui.widgets import PlaceholderContent
 from ui.widgets.track_list import TrackListWidget
@@ -54,56 +56,65 @@ class LibraryPanel(QWidget):
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
         
-        # Header section with title and folder path
+        # LIBRARY header
         header = self._create_header()
         layout.addWidget(header)
         
-        # Folder selection button
+        # Folder path and icon section (right aligned)
         folder_section = self._create_folder_section()
         layout.addWidget(folder_section)
         
-        # Status label
+        # Status label (hidden by default)
         self.status_label = QLabel("")
         self.status_label.setFont(FontManager.get_small_font(9))
-        self.status_label.setStyleSheet(f"color: {TEXT_SECONDARY}; background: transparent; padding: 0 24px;")
+        self.status_label.setStyleSheet(f"color: {TEXT_SECONDARY}; background: transparent; padding: 0 16px;")
         self.status_label.setAlignment(Qt.AlignCenter)
         self.status_label.hide()
         layout.addWidget(self.status_label)
         
-        # Track list widget
+        # Track list widget (contains "By" toggles, search, and scrollable results)
         self.track_list = TrackListWidget()
         self.track_list.track_selected.connect(self.track_selected.emit)
         self.track_list.track_double_clicked.connect(self.track_double_clicked.emit)
         self.track_list.album_add_requested.connect(self.album_add_requested.emit)
         layout.addWidget(self.track_list, 1)
         
-        self.setStyleSheet("LibraryPanel { background-color: #fec5bb; }")
+        self.setStyleSheet(f"LibraryPanel {{ background-color: {BG_SIDEBAR}; }}")
         
     def _create_header(self) -> QWidget:
-        """Create header with title and folder path."""
+        """Create LIBRARY header."""
         header = QWidget()
         header.setAttribute(Qt.WA_StyledBackground, True)
         header.setStyleSheet("background: transparent;")
         
         layout = QVBoxLayout(header)
-        layout.setContentsMargins(24, 20, 24, 12)
+        layout.setContentsMargins(16, 24, 16, 16)
+        layout.setSpacing(0)
+        
+        # LIBRARY title
+        title = QLabel("LIBRARY")
+        title.setFont(FontManager.get_title_font(18))
+        title.setStyleSheet(f"""
+            color: {TEXT_PRIMARY}; 
+            background: transparent;
+            font-weight: 700;
+            letter-spacing: 2px;
+        """)
+        layout.addWidget(title)
+        
+        return header
+        
+    def _create_folder_section(self) -> QWidget:
+        """Create folder path display with folder icon button (right aligned)."""
+        section = QWidget()
+        section.setAttribute(Qt.WA_StyledBackground, True)
+        section.setStyleSheet("background: transparent;")
+        
+        layout = QVBoxLayout(section)
+        layout.setContentsMargins(16, 0, 16, 16)
         layout.setSpacing(8)
         
-        # Title and path container
-        title_row = QHBoxLayout()
-        title_row.setSpacing(0)
-        
-        # Title
-        title = QLabel("My Library")
-        title.setFont(FontManager.get_title_font(14))
-        title.setStyleSheet(f"color: {TEXT_PRIMARY}; background: transparent;")
-        title_row.addWidget(title)
-        
-        title_row.addStretch()
-        
-        layout.addLayout(title_row)
-        
-        # Folder path display
+        # Folder path display (right aligned)
         self.path_label = QLabel("No folder selected")
         self.path_label.setFont(FontManager.get_small_font(9))
         self.path_label.setStyleSheet(f"color: {TEXT_SECONDARY}; background: transparent;")
@@ -111,20 +122,19 @@ class LibraryPanel(QWidget):
         self.path_label.setAlignment(Qt.AlignRight | Qt.AlignTop)
         layout.addWidget(self.path_label)
         
-        return header
+        # Folder icon button container (right aligned)
+        button_container = QWidget()
+        button_container.setAttribute(Qt.WA_StyledBackground, True)
+        button_container.setStyleSheet("background: transparent;")
+        button_layout = QHBoxLayout(button_container)
+        button_layout.setContentsMargins(0, 0, 0, 0)
+        button_layout.setSpacing(0)
         
-    def _create_folder_section(self) -> QWidget:
-        """Create folder selection button section."""
-        section = QWidget()
-        section.setAttribute(Qt.WA_StyledBackground, True)
-        section.setStyleSheet("background: transparent;")
-        
-        layout = QHBoxLayout(section)
-        layout.setContentsMargins(24, 8, 24, 20)
+        button_layout.addStretch()
         
         # Folder icon button
         self.folder_btn = QPushButton()
-        self.folder_btn.setFixedSize(48, 48)
+        self.folder_btn.setFixedSize(56, 56)
         self.folder_btn.setCursor(Qt.PointingHandCursor)
         self.folder_btn.setToolTip("Select music folder")
         
@@ -132,30 +142,29 @@ class LibraryPanel(QWidget):
         folder_icon = load_icon("folder", category="media")
         if not folder_icon.isNull():
             self.folder_btn.setIcon(folder_icon)
-            self.folder_btn.setIconSize(self.folder_btn.size() * 0.6)
+            self.folder_btn.setIconSize(self.folder_btn.size() * 0.55)
         else:
             self.folder_btn.setText("📁")
-            self.folder_btn.setFont(FontManager.get_display_font(20))
+            self.folder_btn.setFont(FontManager.get_display_font(24))
         
         self.folder_btn.setStyleSheet(f"""
             QPushButton {{
-                background-color: rgba(255, 255, 255, 0.3);
-                border: 2px solid rgba(0, 0, 0, 0.1);
-                border-radius: 24px;
+                background-color: {ACCENT_LAVENDER};
+                border: none;
+                border-radius: 12px;
             }}
             QPushButton:hover {{
                 background-color: {ACCENT_HOVER};
-                border-color: rgba(0, 0, 0, 0.15);
             }}
             QPushButton:pressed {{
-                background-color: rgba(255, 255, 255, 0.5);
+                background-color: rgba(183, 148, 246, 0.6);
             }}
         """)
         
         self.folder_btn.clicked.connect(self._select_folder)
         
-        layout.addWidget(self.folder_btn)
-        layout.addStretch()
+        button_layout.addWidget(self.folder_btn)
+        layout.addWidget(button_container)
         
         return section
         
