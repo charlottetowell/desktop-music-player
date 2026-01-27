@@ -7,6 +7,7 @@ import re
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QPushButton, 
                                QScrollArea, QLabel, QFrame, QLineEdit)
 from PySide6.QtCore import Qt, Signal, QTimer, QPoint, QMimeData
+from PySide6.QtGui import QPixmap, QImage
 from ui.themes.colors import (TEXT_PRIMARY, TEXT_SECONDARY, ACCENT_HOVER, 
                                ACCENT_LAVENDER, BORDER_LIGHT)
 from ui.themes.fonts import FontManager
@@ -73,21 +74,21 @@ class TrackItemWidget(QFrame):
     def _setup_ui(self) -> None:
         """Initialize track item UI."""
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(12, 8, 12, 8)
+        layout.setContentsMargins(10, 8, 10, 8)
         layout.setSpacing(2)
         
         # Title
         title = QLabel(self.track.title)
         title.setFont(FontManager.get_body_font(10))
         title.setStyleSheet(f"color: {TEXT_PRIMARY}; background: transparent;")
-        title.setWordWrap(False)
+        title.setWordWrap(True)
         title.setTextInteractionFlags(Qt.NoTextInteraction)  # Prevent text selection
         
         # Artist - Album info
         info = QLabel(f"{self.track.artist}")
         info.setFont(FontManager.get_small_font(9))
         info.setStyleSheet(f"color: {TEXT_SECONDARY}; background: transparent;")
-        info.setWordWrap(False)
+        info.setWordWrap(True)
         
         layout.addWidget(title)
         layout.addWidget(info)
@@ -96,9 +97,10 @@ class TrackItemWidget(QFrame):
             TrackItemWidget {{
                 background-color: rgba(183, 148, 246, 0.1);
                 border-radius: 6px;
+                margin: 0px 2px;
             }}
             TrackItemWidget:hover {{
-                background-color: {ACCENT_HOVER};
+                background-color: rgba(61, 31, 92, 0.6);
             }}
         """)
         self.setCursor(Qt.PointingHandCursor)
@@ -166,23 +168,104 @@ class GroupHeaderWidget(QFrame):
         self._setup_ui(group_name, track_count)
         
     def _setup_ui(self, group_name: str, track_count: int) -> None:
-        """Initialize group header UI."""
+        """Initialize group header UI with album art, album name with year, and artist."""
         layout = QHBoxLayout(self)
-        layout.setContentsMargins(12, 12, 12, 8)
+        layout.setContentsMargins(8, 12, 8, 8)
+        layout.setSpacing(10)
         
-        # Group name
-        name_label = QLabel(group_name)
-        name_label.setFont(FontManager.get_title_font(12))
+        # Album art thumbnail
+        album_art_label = QLabel()
+        album_art_label.setFixedSize(48, 48)
+        album_art_label.setScaledContents(False)
+        album_art_label.setAlignment(Qt.AlignCenter)
+        
+        # Try to load album art from first track
+        art_loaded = False
+        if self.tracks:
+            first_track = self.tracks[0]
+            if hasattr(first_track, 'album_art_data') and first_track.album_art_data:
+                pixmap = QPixmap()
+                if pixmap.loadFromData(first_track.album_art_data):
+                    # Scale to fit while maintaining aspect ratio
+                    scaled_pixmap = pixmap.scaled(
+                        48, 48, 
+                        Qt.KeepAspectRatioByExpanding, 
+                        Qt.SmoothTransformation
+                    )
+                    # Crop to square if needed
+                    if scaled_pixmap.width() > 48 or scaled_pixmap.height() > 48:
+                        x = (scaled_pixmap.width() - 48) // 2
+                        y = (scaled_pixmap.height() - 48) // 2
+                        scaled_pixmap = scaled_pixmap.copy(x, y, 48, 48)
+                    album_art_label.setPixmap(scaled_pixmap)
+                    album_art_label.setStyleSheet("""
+                        QLabel {
+                            border-radius: 6px;
+                        }
+                    """)
+                    art_loaded = True
+        
+        if not art_loaded:
+            album_art_label.setText("♪")
+            album_art_label.setFont(FontManager.get_display_font(20))
+            album_art_label.setStyleSheet(f"""
+                QLabel {{
+                    background-color: rgba(183, 148, 246, 0.2);
+                    border-radius: 6px;
+                    color: {TEXT_SECONDARY};
+                }}
+            """)
+        
+        layout.addWidget(album_art_label)
+        
+        # Text container (album name with year and artist)
+        text_container = QVBoxLayout()
+        text_container.setSpacing(2)
+        
+        # Album name with year in brackets
+        album_year_text = group_name
+        if self.tracks:
+            first_track = self.tracks[0]
+            if hasattr(first_track, 'year') and first_track.year and first_track.year != "Unknown":
+                album_year_text = f"{group_name} ({first_track.year})"
+        
+        name_label = QLabel(album_year_text)
+        name_label.setFont(FontManager.get_title_font(11))
         name_label.setStyleSheet(f"color: {TEXT_PRIMARY}; background: transparent; font-weight: 700;")
+        name_label.setWordWrap(True)
+        text_container.addWidget(name_label)
         
-        # Track count
-        count_label = QLabel(f"{track_count} track{'s' if track_count != 1 else ''}")
+        # Artist name underneath (not after album name)
+        if self.tracks:
+            first_track = self.tracks[0]
+            artist_name = first_track.artist if hasattr(first_track, 'artist') else "Unknown Artist"
+        else:
+            artist_name = "Unknown Artist"
+            
+        artist_label = QLabel(artist_name)
+        artist_label.setFont(FontManager.get_small_font(9))
+        artist_label.setStyleSheet(f"color: {TEXT_SECONDARY}; background: transparent;")
+        artist_label.setWordWrap(True)
+        text_container.addWidget(artist_label)
+        
+        layout.addLayout(text_container, 1)
+        
+        # Track count badge
+        count_label = QLabel(f"{track_count}")
         count_label.setFont(FontManager.get_small_font(9))
-        count_label.setStyleSheet(f"color: {TEXT_SECONDARY}; background: transparent;")
+        count_label.setFixedWidth(24)
+        count_label.setStyleSheet(f"""
+            color: {TEXT_SECONDARY}; 
+            background: transparent;
+            padding: 2px 4px;
+        """)
+        count_label.setAlignment(Qt.AlignCenter)
+        layout.addWidget(count_label)
         
         # Add album button
         add_btn = QPushButton("+ Add")
         add_btn.setFixedHeight(28)
+        add_btn.setFixedWidth(60)
         add_btn.setFont(FontManager.get_small_font(9))
         add_btn.setCursor(Qt.PointingHandCursor)
         add_btn.setStyleSheet(f"""
@@ -191,18 +274,15 @@ class GroupHeaderWidget(QFrame):
                 color: {TEXT_PRIMARY};
                 border: none;
                 border-radius: 6px;
-                padding: 4px 14px;
+                padding: 4px 10px;
                 font-weight: 600;
             }}
             QPushButton:hover {{
                 background-color: {ACCENT_HOVER};
             }}
         """)
-        add_btn.clicked.connect(lambda: self.add_album_clicked.emit(self.group_name, ""))
+        add_btn.clicked.connect(lambda: self.add_album_clicked.emit(self.group_name, artist_name))
         
-        layout.addWidget(name_label)
-        layout.addWidget(count_label)
-        layout.addStretch()
         layout.addWidget(add_btn)
         
         self.setStyleSheet("GroupHeaderWidget { background: transparent; }")
@@ -293,7 +373,7 @@ class TrackListWidget(QWidget):
         # Content widget for tracks
         self.content_widget = QWidget()
         self.content_layout = QVBoxLayout(self.content_widget)
-        self.content_layout.setContentsMargins(12, 8, 12, 12)
+        self.content_layout.setContentsMargins(8, 8, 8, 12)
         self.content_layout.setSpacing(4)
         self.content_layout.addStretch()
         
