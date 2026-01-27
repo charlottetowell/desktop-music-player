@@ -158,108 +158,124 @@ class GroupHeaderWidget(QFrame):
     
     add_album_clicked = Signal(str, str)  # Emits (album_name, artist_name)
     
-    def __init__(self, group_name: str, track_count: int, tracks: List[AudioTrack] = None, parent: QWidget = None) -> None:
+    def __init__(self, group_name: str, track_count: int, tracks: List[AudioTrack] = None, group_mode: str = "album", parent: QWidget = None) -> None:
         super().__init__(parent)
         self.group_name = group_name
         self.track_count = track_count
         self.tracks = tracks or []
+        self.group_mode = group_mode
         self._drag_start_pos = QPoint()
         self.setAttribute(Qt.WA_StyledBackground, True)
         self._setup_ui(group_name, track_count)
         
     def _setup_ui(self, group_name: str, track_count: int) -> None:
-        """Initialize group header UI with album art, album name with year, and artist."""
+        """Initialize group header UI based on group mode."""
         layout = QHBoxLayout(self)
         layout.setContentsMargins(8, 12, 8, 8)
         layout.setSpacing(10)
         
-        # Album art thumbnail
-        album_art_label = QLabel()
-        album_art_label.setFixedSize(48, 48)
-        album_art_label.setScaledContents(False)
-        album_art_label.setAlignment(Qt.AlignCenter)
+        # Album art thumbnail (only show for album mode)
+        if self.group_mode == "album":
+            album_art_label = QLabel()
+            album_art_label.setFixedSize(48, 48)
+            album_art_label.setScaledContents(False)
+            album_art_label.setAlignment(Qt.AlignCenter)
+            
+            # Try to load album art from first track
+            art_loaded = False
+            if self.tracks:
+                first_track = self.tracks[0]
+                if hasattr(first_track, 'album_art_data') and first_track.album_art_data:
+                    pixmap = QPixmap()
+                    if pixmap.loadFromData(first_track.album_art_data):
+                        # Scale to fit while maintaining aspect ratio
+                        scaled_pixmap = pixmap.scaled(
+                            48, 48, 
+                            Qt.KeepAspectRatioByExpanding, 
+                            Qt.SmoothTransformation
+                        )
+                        # Crop to square if needed
+                        if scaled_pixmap.width() > 48 or scaled_pixmap.height() > 48:
+                            x = (scaled_pixmap.width() - 48) // 2
+                            y = (scaled_pixmap.height() - 48) // 2
+                            scaled_pixmap = scaled_pixmap.copy(x, y, 48, 48)
+                        album_art_label.setPixmap(scaled_pixmap)
+                        album_art_label.setStyleSheet("""
+                            QLabel {
+                                border-radius: 6px;
+                            }
+                        """)
+                        art_loaded = True
+            
+            if not art_loaded:
+                album_art_label.setText("♪")
+                album_art_label.setFont(FontManager.get_display_font(20))
+                album_art_label.setStyleSheet(f"""
+                    QLabel {{
+                        background-color: rgba(183, 148, 246, 0.2);
+                        border-radius: 6px;
+                        color: {TEXT_SECONDARY};
+                    }}
+                """)
+            
+            layout.addWidget(album_art_label)
         
-        # Try to load album art from first track
-        art_loaded = False
-        if self.tracks:
-            first_track = self.tracks[0]
-            if hasattr(first_track, 'album_art_data') and first_track.album_art_data:
-                pixmap = QPixmap()
-                if pixmap.loadFromData(first_track.album_art_data):
-                    # Scale to fit while maintaining aspect ratio
-                    scaled_pixmap = pixmap.scaled(
-                        48, 48, 
-                        Qt.KeepAspectRatioByExpanding, 
-                        Qt.SmoothTransformation
-                    )
-                    # Crop to square if needed
-                    if scaled_pixmap.width() > 48 or scaled_pixmap.height() > 48:
-                        x = (scaled_pixmap.width() - 48) // 2
-                        y = (scaled_pixmap.height() - 48) // 2
-                        scaled_pixmap = scaled_pixmap.copy(x, y, 48, 48)
-                    album_art_label.setPixmap(scaled_pixmap)
-                    album_art_label.setStyleSheet("""
-                        QLabel {
-                            border-radius: 6px;
-                        }
-                    """)
-                    art_loaded = True
-        
-        if not art_loaded:
-            album_art_label.setText("♪")
-            album_art_label.setFont(FontManager.get_display_font(20))
-            album_art_label.setStyleSheet(f"""
-                QLabel {{
-                    background-color: rgba(183, 148, 246, 0.2);
-                    border-radius: 6px;
-                    color: {TEXT_SECONDARY};
-                }}
-            """)
-        
-        layout.addWidget(album_art_label)
-        
-        # Text container (album name with year and artist)
+        # Text container
         text_container = QVBoxLayout()
         text_container.setSpacing(2)
         
-        # Album name with year in brackets
-        album_year_text = group_name
-        if self.tracks:
-            first_track = self.tracks[0]
-            if hasattr(first_track, 'year') and first_track.year and first_track.year != "Unknown":
-                album_year_text = f"{group_name} ({first_track.year})"
-        
-        name_label = QLabel(album_year_text)
-        name_label.setFont(FontManager.get_title_font(11))
-        name_label.setStyleSheet(f"color: {TEXT_PRIMARY}; background: transparent; font-weight: 700;")
-        name_label.setWordWrap(True)
-        text_container.addWidget(name_label)
-        
-        # Track count info
+        # Get artist name for later use
+        artist_name = "Unknown Artist"
         if self.tracks:
             first_track = self.tracks[0]
             artist_name = first_track.artist if hasattr(first_track, 'artist') else "Unknown Artist"
-        else:
-            artist_name = "Unknown Artist"
+        
+        # Primary label text based on mode
+        if self.group_mode == "album":
+            # Album name with year
+            primary_text = group_name
+            if self.tracks:
+                first_track = self.tracks[0]
+                if hasattr(first_track, 'year') and first_track.year and first_track.year != "Unknown":
+                    primary_text = f"{group_name} ({first_track.year})"
             
-        count_info = QLabel(f"{track_count} tracks")
-        count_info.setFont(FontManager.get_small_font(9))
-        count_info.setStyleSheet(f"color: {TEXT_SECONDARY}; background: transparent;")
-        text_container.addWidget(count_info)
+            name_label = QLabel(primary_text)
+            name_label.setFont(FontManager.get_title_font(11))
+            name_label.setStyleSheet(f"color: {TEXT_PRIMARY}; background: transparent; font-weight: 700;")
+            name_label.setWordWrap(True)
+            text_container.addWidget(name_label)
+            
+            # Artist name as secondary
+            artist_label = QLabel(artist_name)
+            artist_label.setFont(FontManager.get_small_font(9))
+            artist_label.setStyleSheet(f"color: {TEXT_SECONDARY}; background: transparent;")
+            text_container.addWidget(artist_label)
+            
+        elif self.group_mode == "artist":
+            # Just artist name
+            name_label = QLabel(group_name)
+            name_label.setFont(FontManager.get_title_font(11))
+            name_label.setStyleSheet(f"color: {TEXT_PRIMARY}; background: transparent; font-weight: 700;")
+            name_label.setWordWrap(True)
+            text_container.addWidget(name_label)
+            
+        elif self.group_mode == "year":
+            # Just year
+            name_label = QLabel(group_name)
+            name_label.setFont(FontManager.get_title_font(11))
+            name_label.setStyleSheet(f"color: {TEXT_PRIMARY}; background: transparent; font-weight: 700;")
+            name_label.setWordWrap(True)
+            text_container.addWidget(name_label)
+            
+        else:  # folder
+            # Just folder name
+            name_label = QLabel(group_name)
+            name_label.setFont(FontManager.get_title_font(11))
+            name_label.setStyleSheet(f"color: {TEXT_PRIMARY}; background: transparent; font-weight: 700;")
+            name_label.setWordWrap(True)
+            text_container.addWidget(name_label)
         
         layout.addLayout(text_container, 1)
-        
-        # Track count badge
-        count_label = QLabel(f"{track_count}")
-        count_label.setFont(FontManager.get_small_font(9))
-        count_label.setFixedWidth(24)
-        count_label.setStyleSheet(f"""
-            color: {TEXT_SECONDARY}; 
-            background: transparent;
-            padding: 2px 4px;
-        """)
-        count_label.setAlignment(Qt.AlignCenter)
-        layout.addWidget(count_label)
         
         # Add album button
         add_btn = QPushButton("+ Add")
@@ -556,7 +572,7 @@ class TrackListWidget(QWidget):
         # Display grouped tracks
         for group_name, group_tracks in groups.items():
             # Add group header
-            header = GroupHeaderWidget(group_name, len(group_tracks), group_tracks)
+            header = GroupHeaderWidget(group_name, len(group_tracks), group_tracks, self.current_group_mode)
             header.add_album_clicked.connect(lambda gn=group_name: self._on_add_album(gn))
             self.content_layout.insertWidget(self.content_layout.count() - 1, header)
             

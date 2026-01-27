@@ -177,7 +177,7 @@ class AudioScanner:
         """Group tracks by album."""
         groups: Dict[str, List[AudioTrack]] = {}
         for track in self.tracks:
-            album_key = f"{track.album} - {track.artist}"
+            album_key = f"{track.album}"
             if album_key not in groups:
                 groups[album_key] = []
             groups[album_key].append(track)
