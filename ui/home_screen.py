@@ -84,26 +84,18 @@ class HomeScreen(QWidget):
                 self.queue_manager.set_current_index(0)
         
     def _create_queue_panel(self) -> Panel:
-        """Create middle panel for queue with app logo."""
-        panel = Panel(background_color="#f8edeb")
+        """Create middle panel for queue."""
+        from ui.themes.colors import BG_DEEP_PURPLE
+        panel = Panel(background_color=BG_DEEP_PURPLE)
         
-        # App logo/name at top
-        logo_widget = self._create_logo_header()
-        panel.content_layout.setContentsMargins(0, 0, 0, 0)
-        panel.main_layout.insertWidget(0, logo_widget)
-        
-        # Queue header
-        self.queue_header = SectionHeader("Queue", "0 tracks")
-        panel.content_layout.setContentsMargins(24, 12, 24, 0)
-        panel.content_layout.addWidget(self.queue_header)
-        
-        # Queue widget
+        # Queue widget (no header, starts immediately)
         self.queue_widget = QueueWidget(self.queue_manager)
         self.queue_widget.track_double_clicked.connect(self._on_queue_track_double_clicked)
+        panel.content_layout.setContentsMargins(0, 0, 0, 0)
         panel.content_layout.addWidget(self.queue_widget, 1)
         
-        # Update header when queue changes
-        self.queue_manager.queue_changed.connect(self._update_queue_header)
+        # Update queue display when it changes
+        self.queue_manager.queue_changed.connect(self._update_queue_display)
         
         return panel
         
@@ -128,38 +120,10 @@ class HomeScreen(QWidget):
         
         return panel
         
-    def _create_logo_header(self) -> QWidget:
-        """Create Peachy Player logo header."""
-        header = QWidget()
-        header.setAttribute(Qt.WA_StyledBackground, True)
-        header.setFixedHeight(80)
-        
-        layout = QVBoxLayout(header)
-        layout.setContentsMargins(0, 20, 0, 20)
-        layout.setAlignment(Qt.AlignCenter)
-        
-        # App name
-        logo = QLabel("Peachy Player")
-        logo.setAlignment(Qt.AlignCenter)
-        logo.setFont(FontManager.get_display_font(24))
-        logo.setStyleSheet("""
-            QLabel {
-                color: #ffffff;
-                background: transparent;
-                letter-spacing: 1px;
-            }
-        """)
-        
-        layout.addWidget(logo)
-        
-        header.setStyleSheet("QWidget { background: transparent; }")
-        
-        return header
-        
-    def _update_queue_header(self) -> None:
-        """Update queue header with track count."""
-        count = self.queue_manager.size()
-        self.queue_header.update_subtitle(f"{count} track{'s' if count != 1 else ''}")
+    def _update_queue_display(self) -> None:
+        """Update queue display when it changes."""
+        # Queue widget handles its own display updates
+        pass
         
     def _on_queue_track_double_clicked(self, index: int) -> None:
         """Handle double-click on queue track - play from that position."""

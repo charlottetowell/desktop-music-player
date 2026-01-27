@@ -8,7 +8,7 @@ from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel,
                                QScrollArea, QFrame, QPushButton)
 from PySide6.QtCore import Qt, Signal, QMimeData, QPoint, QSize, QByteArray
 from PySide6.QtGui import QDrag, QPixmap, QPainter, QColor, QImage
-from ui.themes.colors import TEXT_PRIMARY, TEXT_SECONDARY, TEXT_MUTED, ACCENT_HOVER
+from ui.themes.colors import TEXT_PRIMARY, TEXT_SECONDARY, TEXT_MUTED, ACCENT_HOVER, ACCENT_LAVENDER
 from ui.themes.fonts import FontManager
 from core.audio_scanner import AudioTrack
 from core.queue_manager import QueueManager
@@ -32,10 +32,53 @@ class QueueTrackWidget(QFrame):
         self._setup_ui()
         
     def _setup_ui(self) -> None:
-        """Initialize track item UI."""
+        """Initialize track item UI with album art."""
         layout = QHBoxLayout(self)
-        layout.setContentsMargins(12, 8, 8, 8)
-        layout.setSpacing(12)
+        layout.setContentsMargins(10, 8, 10, 8)
+        layout.setSpacing(10)
+        
+        # Album art thumbnail
+        album_art_label = QLabel()
+        album_art_label.setFixedSize(40, 40)
+        album_art_label.setScaledContents(False)
+        album_art_label.setAlignment(Qt.AlignCenter)
+        
+        # Try to load album art from track
+        art_loaded = False
+        if hasattr(self.track, 'album_art_data') and self.track.album_art_data:
+            pixmap = QPixmap()
+            if pixmap.loadFromData(self.track.album_art_data):
+                # Scale to fit while maintaining aspect ratio
+                scaled_pixmap = pixmap.scaled(
+                    40, 40,
+                    Qt.KeepAspectRatioByExpanding,
+                    Qt.SmoothTransformation
+                )
+                # Crop to square if needed
+                if scaled_pixmap.width() > 40 or scaled_pixmap.height() > 40:
+                    x = (scaled_pixmap.width() - 40) // 2
+                    y = (scaled_pixmap.height() - 40) // 2
+                    scaled_pixmap = scaled_pixmap.copy(x, y, 40, 40)
+                album_art_label.setPixmap(scaled_pixmap)
+                album_art_label.setStyleSheet("""
+                    QLabel {
+                        border-radius: 4px;
+                    }
+                """)
+                art_loaded = True
+        
+        if not art_loaded:
+            album_art_label.setText("♪")
+            album_art_label.setFont(FontManager.get_title_font(16))
+            album_art_label.setStyleSheet(f"""
+                QLabel {{
+                    background-color: rgba(183, 148, 246, 0.2);
+                    border-radius: 4px;
+                    color: {TEXT_SECONDARY};
+                }}
+            """)
+        
+        layout.addWidget(album_art_label)
         
         # Track info container
         info_layout = QVBoxLayout()
@@ -44,14 +87,14 @@ class QueueTrackWidget(QFrame):
         # Title
         title = QLabel(self.track.title)
         title.setFont(FontManager.get_body_font(10) if not self.is_current else FontManager.get_title_font(10))
-        title.setStyleSheet(f"color: {TEXT_PRIMARY}; background: transparent;")
-        title.setWordWrap(False)
+        title.setStyleSheet(f"color: {TEXT_PRIMARY}; background: transparent; font-weight: {'700' if self.is_current else '400'};")
+        title.setWordWrap(True)
         
         # Artist
         artist = QLabel(self.track.artist)
         artist.setFont(FontManager.get_small_font(9))
         artist.setStyleSheet(f"color: {TEXT_SECONDARY}; background: transparent;")
-        artist.setWordWrap(False)
+        artist.setWordWrap(True)
         
         info_layout.addWidget(title)
         info_layout.addWidget(artist)
@@ -66,13 +109,13 @@ class QueueTrackWidget(QFrame):
             remove_btn.setCursor(Qt.PointingHandCursor)
             remove_btn.setStyleSheet(f"""
                 QPushButton {{
-                    background-color: rgba(0, 0, 0, 0.1);
+                    background-color: rgba(183, 148, 246, 0.2);
                     color: {TEXT_SECONDARY};
                     border: none;
                     border-radius: 12px;
                 }}
                 QPushButton:hover {{
-                    background-color: #e57373;
+                    background-color: #ff6b9d;
                     color: white;
                 }}
             """)
@@ -80,14 +123,15 @@ class QueueTrackWidget(QFrame):
             layout.addWidget(remove_btn)
         
         # Styling
-        bg_color = "rgba(100, 150, 255, 0.15)" if self.is_current else "rgba(0, 0, 0, 0.03)"
-        hover_color = "rgba(100, 150, 255, 0.25)" if self.is_current else ACCENT_HOVER
+        # Use deep purple background for non-current tracks, lavender for current
+        bg_color = f"{ACCENT_LAVENDER}" if self.is_current else "transparent"
+        hover_color = "rgba(183, 148, 246, 0.15)" if not self.is_current else ACCENT_LAVENDER
         
         self.setStyleSheet(f"""
             QueueTrackWidget {{
                 background-color: {bg_color};
-                border-radius: 6px;
-                border-left: 3px solid {"#6495ed" if self.is_current else "transparent"};
+                border-radius: 0px;
+                border-left: 3px solid {ACCENT_LAVENDER if self.is_current else "transparent"};
             }}
             QueueTrackWidget:hover {{
                 background-color: {hover_color};
@@ -185,9 +229,9 @@ class AlbumGroupWidget(QFrame):
             # Placeholder album cover
             cover_label.setStyleSheet(f"""
                 QLabel {{
-                    background-color: rgba(0, 0, 0, 0.15);
+                    background-color: rgba(183, 148, 246, 0.2);
                     border-radius: 4px;
-                    border: 2px solid rgba(0, 0, 0, 0.1);
+                    border: none;
                 }}
             """)
             cover_label.setAlignment(Qt.AlignCenter)
@@ -200,13 +244,13 @@ class AlbumGroupWidget(QFrame):
         
         album_label = QLabel(self.album_name)
         album_label.setFont(FontManager.get_title_font(11))
-        album_label.setStyleSheet(f"color: {TEXT_PRIMARY}; background: transparent;")
-        album_label.setWordWrap(False)
+        album_label.setStyleSheet(f"color: {TEXT_PRIMARY}; background: transparent; font-weight: 700;")
+        album_label.setWordWrap(True)
         
         artist_label = QLabel(self.artist_name)
         artist_label.setFont(FontManager.get_small_font(9))
         artist_label.setStyleSheet(f"color: {TEXT_SECONDARY}; background: transparent;")
-        artist_label.setWordWrap(False)
+        artist_label.setWordWrap(True)
         
         info_layout.addWidget(album_label)
         info_layout.addWidget(artist_label)
@@ -214,11 +258,11 @@ class AlbumGroupWidget(QFrame):
         layout.addWidget(cover_label)
         layout.addLayout(info_layout, 1)
         
-        header.setStyleSheet("""
-            QFrame {
-                background-color: rgba(0, 0, 0, 0.05);
+        header.setStyleSheet(f"""
+            QFrame {{
+                background-color: rgba(183, 148, 246, 0.15);
                 border-radius: 6px;
-            }
+            }}
         """)
         
         return header
@@ -236,15 +280,13 @@ class AlbumGroupWidget(QFrame):
 
 
 class QueueWidget(QWidget):
-    """Queue display widget with album grouping and drag-and-drop."""
+    """Queue display widget with flat track list and drag-and-drop."""
     
     track_double_clicked = Signal(int)  # Emits queue index to play
     
     def __init__(self, queue_manager: QueueManager, parent: QWidget = None) -> None:
         super().__init__(parent)
         self.queue_manager = queue_manager
-        self.up_next_album_groups: Dict[str, AlbumGroupWidget] = {}
-        self.just_played_album_groups: Dict[str, AlbumGroupWidget] = {}
         self._drag_source_index: Optional[int] = None
         self.setAttribute(Qt.WA_StyledBackground, True)
         self.setAcceptDrops(True)
@@ -254,18 +296,24 @@ class QueueWidget(QWidget):
     def _setup_ui(self) -> None:
         """Initialize queue widget UI."""
         main_layout = QVBoxLayout(self)
-        main_layout.setContentsMargins(0, 0, 0, 0)
+        main_layout.setContentsMargins(24, 24, 24, 24)
         main_layout.setSpacing(0)
         
-        # Header with Up Next title and Clear button
+        # Header with Up Next title, track count, and Clear button
         header_layout = QHBoxLayout()
-        header_layout.setContentsMargins(16, 12, 12, 8)
+        header_layout.setContentsMargins(0, 0, 0, 12)
         header_layout.setSpacing(8)
         
         up_next_label = QLabel("Up Next")
         up_next_label.setFont(FontManager.get_title_font(12))
-        up_next_label.setStyleSheet(f"color: {TEXT_PRIMARY}; background: transparent;")
+        up_next_label.setStyleSheet(f"color: {TEXT_PRIMARY}; background: transparent; font-weight: 700;")
         header_layout.addWidget(up_next_label)
+        
+        # Track count label
+        self.track_count_label = QLabel("0 tracks")
+        self.track_count_label.setFont(FontManager.get_small_font(9))
+        self.track_count_label.setStyleSheet(f"color: {TEXT_SECONDARY}; background: transparent;")
+        header_layout.addWidget(self.track_count_label)
         
         header_layout.addStretch()
         
@@ -275,18 +323,18 @@ class QueueWidget(QWidget):
         self.clear_btn.setCursor(Qt.PointingHandCursor)
         self.clear_btn.setStyleSheet(f"""
             QPushButton {{
-                background-color: rgba(0, 0, 0, 0.05);
+                background-color: rgba(183, 148, 246, 0.2);
                 color: {TEXT_SECONDARY};
                 border: none;
                 border-radius: 4px;
                 padding: 6px 12px;
             }}
             QPushButton:hover {{
-                background-color: rgba(229, 115, 115, 0.2);
-                color: #e57373;
+                background-color: rgba(255, 107, 157, 0.3);
+                color: #ff6b9d;
             }}
             QPushButton:pressed {{
-                background-color: rgba(229, 115, 115, 0.3);
+                background-color: rgba(255, 107, 157, 0.4);
             }}
         """)
         self.clear_btn.clicked.connect(self._on_clear_queue)
@@ -304,8 +352,8 @@ class QueueWidget(QWidget):
         
         self.up_next_content = QWidget()
         self.up_next_layout = QVBoxLayout(self.up_next_content)
-        self.up_next_layout.setContentsMargins(12, 0, 12, 12)
-        self.up_next_layout.setSpacing(16)
+        self.up_next_layout.setContentsMargins(0, 0, 0, 12)
+        self.up_next_layout.setSpacing(4)
         self.up_next_layout.addStretch()
         
         self.up_next_scroll.setWidget(self.up_next_content)
@@ -314,13 +362,13 @@ class QueueWidget(QWidget):
         # Divider
         divider = QFrame()
         divider.setFrameShape(QFrame.HLine)
-        divider.setStyleSheet("background-color: rgba(0, 0, 0, 0.1); max-height: 2px;")
+        divider.setStyleSheet("background-color: rgba(183, 148, 246, 0.2); max-height: 1px;")
         main_layout.addWidget(divider)
         
         # Just Played Section (Bottom)
         just_played_label = QLabel("Just Played")
         just_played_label.setFont(FontManager.get_title_font(12))
-        just_played_label.setStyleSheet(f"color: {TEXT_SECONDARY}; background: transparent; padding: 8px 16px 8px 16px;")
+        just_played_label.setStyleSheet(f"color: {TEXT_PRIMARY}; background: transparent; padding: 12px 0px 12px 0px; font-weight: 700;")
         main_layout.addWidget(just_played_label)
         
         # Just Played scroll area
@@ -332,8 +380,8 @@ class QueueWidget(QWidget):
         
         self.just_played_content = QWidget()
         self.just_played_layout = QVBoxLayout(self.just_played_content)
-        self.just_played_layout.setContentsMargins(12, 0, 12, 12)
-        self.just_played_layout.setSpacing(16)
+        self.just_played_layout.setContentsMargins(0, 0, 0, 12)
+        self.just_played_layout.setSpacing(4)
         self.just_played_layout.addStretch()
         
         self.just_played_scroll.setWidget(self.just_played_content)
@@ -347,17 +395,17 @@ class QueueWidget(QWidget):
                 border: none;
             }
             QScrollBar:vertical {
-                background: rgba(0, 0, 0, 0.05);
-                width: 10px;
-                border-radius: 5px;
+                background: rgba(183, 148, 246, 0.1);
+                width: 8px;
+                border-radius: 4px;
             }
             QScrollBar::handle:vertical {
-                background: rgba(0, 0, 0, 0.2);
-                border-radius: 5px;
+                background: rgba(183, 148, 246, 0.3);
+                border-radius: 4px;
                 min-height: 20px;
             }
             QScrollBar::handle:vertical:hover {
-                background: rgba(0, 0, 0, 0.3);
+                background: rgba(183, 148, 246, 0.5);
             }
             QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
                 height: 0px;
@@ -372,7 +420,7 @@ class QueueWidget(QWidget):
         self.queue_manager.current_track_changed.connect(self._on_current_track_changed)
         
     def _refresh_display(self) -> None:
-        """Refresh the queue display with album grouping in two sections."""
+        """Refresh the queue display as a simple flat list."""
         # Clear existing content
         while self.up_next_layout.count() > 1:  # Keep the stretch
             item = self.up_next_layout.takeAt(0)
@@ -383,12 +431,13 @@ class QueueWidget(QWidget):
             item = self.just_played_layout.takeAt(0)
             if item.widget():
                 item.widget().deleteLater()
-                
-        self.up_next_album_groups.clear()
-        self.just_played_album_groups.clear()
         
         queue = self.queue_manager.get_queue()
         current_index = self.queue_manager.get_current_index()
+        
+        # Update track count
+        total_tracks = len(queue)
+        self.track_count_label.setText(f"{total_tracks} track{'s' if total_tracks != 1 else ''}")
         
         if not queue:
             self._show_empty_state()
@@ -404,9 +453,15 @@ class QueueWidget(QWidget):
             else:
                 up_next_tracks.append((track, idx))
         
-        # Render Up Next section
+        # Render Up Next section (simple flat list)
         if up_next_tracks:
-            self._render_section(up_next_tracks, self.up_next_layout, self.up_next_album_groups, False, current_index)
+            for track, idx in up_next_tracks:
+                is_current = (idx == current_index)
+                track_widget = QueueTrackWidget(track, idx, is_current, read_only=False)
+                track_widget.track_clicked.connect(self.track_double_clicked.emit)
+                track_widget.remove_requested.connect(self._on_remove_track)
+                track_widget.drag_started.connect(self._on_drag_started)
+                self.up_next_layout.insertWidget(self.up_next_layout.count() - 1, track_widget)
         else:
             empty_label = QLabel("No upcoming tracks")
             empty_label.setAlignment(Qt.AlignCenter)
@@ -417,7 +472,11 @@ class QueueWidget(QWidget):
         # Render Just Played section (in reverse order - most recent first)
         if just_played_tracks:
             just_played_tracks.reverse()
-            self._render_section(just_played_tracks, self.just_played_layout, self.just_played_album_groups, True, current_index)
+            for track, idx in just_played_tracks:
+                is_current = (idx == current_index)
+                track_widget = QueueTrackWidget(track, idx, is_current, read_only=True)
+                track_widget.track_clicked.connect(self.track_double_clicked.emit)
+                self.just_played_layout.insertWidget(self.just_played_layout.count() - 1, track_widget)
         else:
             empty_label = QLabel("No played tracks yet")
             empty_label.setAlignment(Qt.AlignCenter)
@@ -425,64 +484,6 @@ class QueueWidget(QWidget):
             empty_label.setStyleSheet(f"color: {TEXT_MUTED}; background: transparent; padding: 40px;")
             self.just_played_layout.insertWidget(0, empty_label)
     
-    def _render_section(self, tracks: List[tuple[AudioTrack, int]], layout: QVBoxLayout, 
-                       album_groups_dict: Dict[str, AlbumGroupWidget], read_only: bool, current_index: int) -> None:
-        """Render a section (Up Next or Just Played) with album grouping."""
-        # Group adjacent tracks by album
-        album_groups: List[tuple[str, str, List[tuple[AudioTrack, int]]]] = []
-        
-        current_group_key = None
-        current_group_name = None
-        current_group_artist = None
-        current_group_tracks = []
-        
-        for track, idx in tracks:
-            album_key = f"{track.album}|{track.artist}"
-            
-            # Start new group if album changes or first track
-            if album_key != current_group_key:
-                # Save previous group if it exists
-                if current_group_tracks:
-                    album_groups.append((current_group_name, current_group_artist, current_group_tracks))
-                
-                # Start new group
-                current_group_key = album_key
-                current_group_name = track.album
-                current_group_artist = track.artist
-                current_group_tracks = [(track, idx)]
-            else:
-                # Add to current group
-                current_group_tracks.append((track, idx))
-        
-        # Don't forget the last group
-        if current_group_tracks:
-            album_groups.append((current_group_name, current_group_artist, current_group_tracks))
-            
-        # Create album group widgets
-        for album_name, artist_name, album_tracks in album_groups:
-            # Get album art from first track in album
-            album_art_pixmap = None
-            if album_tracks[0][0].album_art_data:
-                album_art_pixmap = self._load_album_art(album_tracks[0][0].album_art_data)
-            
-            album_group = AlbumGroupWidget(album_name, artist_name, album_art_pixmap)
-            
-            # Add tracks to group
-            for track, idx in album_tracks:
-                is_current = (idx == current_index)
-                track_widget = QueueTrackWidget(track, idx, is_current, read_only)
-                if not read_only:
-                    track_widget.track_clicked.connect(self.track_double_clicked.emit)
-                    track_widget.remove_requested.connect(self._on_remove_track)
-                    track_widget.drag_started.connect(self._on_drag_started)
-                else:
-                    track_widget.track_clicked.connect(self.track_double_clicked.emit)
-                album_group.add_track_widget(track_widget)
-                
-            album_key = f"{album_name}|{artist_name}"
-            album_groups_dict[album_key] = album_group
-            layout.insertWidget(layout.count() - 1, album_group)
-            
     def _show_empty_state(self) -> None:
         """Show empty queue message."""
         empty_label = QLabel("Queue is empty\n\nDouble-click or drag tracks\nfrom your library to add them")
