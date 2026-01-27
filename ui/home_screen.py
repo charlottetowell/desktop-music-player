@@ -7,7 +7,7 @@ from PySide6.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QLabel
 from PySide6.QtCore import Qt
 from ui.themes import FontManager
 from ui.themes.colors import BG_SIDEBAR, BG_DEEP_PURPLE
-from ui.widgets import Panel, SectionHeader, PlaceholderContent
+from ui.widgets import Panel, SectionHeader
 from ui.widgets.library_panel import LibraryPanel
 from ui.widgets.queue_widget import QueueWidget
 from ui.widgets.now_playing_widget import NowPlayingWidget
