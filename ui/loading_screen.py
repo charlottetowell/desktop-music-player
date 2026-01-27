@@ -29,12 +29,6 @@ class LoadingScreen(QWidget):
         layout.setContentsMargins(40, 60, 40, 60)
         layout.setSpacing(30)
         
-        # App title
-        title = QLabel("Peachy Player")
-        title.setAlignment(Qt.AlignCenter)
-        title.setFont(FontManager.get_display_font(24))
-        title.setStyleSheet(f"color: {TEXT_PRIMARY}; background: transparent;")
-        
         # Loading text
         self.loading_label = QLabel("Initializing...")
         self.loading_label.setAlignment(Qt.AlignCenter)
@@ -60,7 +54,6 @@ class LoadingScreen(QWidget):
         """)
         
         layout.addStretch()
-        layout.addWidget(title)
         layout.addWidget(self.loading_label)
         layout.addWidget(self.progress_bar)
         layout.addStretch()
@@ -88,12 +81,12 @@ class LoadingScreen(QWidget):
         """Update progress bar animation."""
         self._progress += 2
         
-        if self._progress <= 30:
-            self.loading_label.setText("Loading audio engine...")
-        elif self._progress <= 60:
-            self.loading_label.setText("Initializing components...")
+        if self._progress <= 33:
+            self.loading_label.setText("Loading existing queue...")
+        elif self._progress <= 66:
+            self.loading_label.setText("Registering shortcuts...")
         elif self._progress <= 90:
-            self.loading_label.setText("Preparing interface...")
+            self.loading_label.setText("Found audio files...")
         else:
             self.loading_label.setText("Ready!")
         
