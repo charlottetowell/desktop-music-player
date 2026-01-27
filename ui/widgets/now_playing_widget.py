@@ -56,7 +56,6 @@ class NowPlayingWidget(QWidget):
         # Track info
         info_layout = QVBoxLayout()
         info_layout.setSpacing(6)
-        info_layout.setAlignment(Qt.AlignCenter)
         
         # Track title
         self.title_label = QLabel("No track playing")
@@ -64,7 +63,7 @@ class NowPlayingWidget(QWidget):
         self.title_label.setFont(FontManager.get_title_font(18))
         self.title_label.setStyleSheet(f"color: {TEXT_PRIMARY}; background: transparent; font-weight: bold;")
         self.title_label.setWordWrap(True)
-        self.title_label.setMaximumHeight(60)
+        self.title_label.setMinimumHeight(0)
         
         # Artist & Album (combined)
         self.artist_label = QLabel("")
@@ -72,7 +71,6 @@ class NowPlayingWidget(QWidget):
         self.artist_label.setFont(FontManager.get_body_font(14))
         self.artist_label.setStyleSheet(f"color: {TEXT_SECONDARY}; background: transparent;")
         self.artist_label.setWordWrap(True)
-        self.artist_label.setMaximumHeight(50)
         
         info_layout.addWidget(self.title_label)
         info_layout.addWidget(self.artist_label)
@@ -85,9 +83,9 @@ class NowPlayingWidget(QWidget):
         layout.addWidget(self.visualizer)
         
         # Progress bar section
-        layout.addSpacing(8)
+        layout.addSpacing(4)
         progress_layout = QVBoxLayout()
-        progress_layout.setSpacing(8)
+        progress_layout.setSpacing(4)
         
         # Time labels
         time_layout = QHBoxLayout()
@@ -108,22 +106,23 @@ class NowPlayingWidget(QWidget):
         self.progress_slider.setMinimum(0)
         self.progress_slider.setMaximum(1000)  # Use 1000 for smooth progress
         self.progress_slider.setValue(0)
+        self.progress_slider.setFixedHeight(20)
         self.progress_slider.setStyleSheet(f"""
             QSlider::groove:horizontal {{
                 background: rgba(183, 148, 246, 0.2);
-                height: 6px;
-                border-radius: 3px;
+                height: 4px;
+                border-radius: 2px;
             }}
             QSlider::handle:horizontal {{
                 background: {ACCENT_LAVENDER};
-                width: 16px;
-                height: 16px;
-                margin: -5px 0;
-                border-radius: 8px;
+                width: 12px;
+                height: 12px;
+                margin: -4px 0;
+                border-radius: 6px;
             }}
             QSlider::sub-page:horizontal {{
                 background: {ACCENT_LAVENDER};
-                border-radius: 3px;
+                border-radius: 2px;
             }}
         """)
         self.progress_slider.sliderPressed.connect(self._on_slider_pressed)

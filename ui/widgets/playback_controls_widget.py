@@ -24,8 +24,8 @@ class PlaybackControlsWidget(QWidget):
     def _setup_ui(self) -> None:
         """Initialize control buttons."""
         layout = QHBoxLayout(self)
-        layout.setContentsMargins(24, 4, 24, 16)
-        layout.setSpacing(12)
+        layout.setContentsMargins(24, 0, 24, 8)
+        layout.setSpacing(8)
         layout.setAlignment(Qt.AlignCenter)
         
         # Button style
@@ -34,8 +34,8 @@ class PlaybackControlsWidget(QWidget):
                 background-color: transparent;
                 color: {TEXT_PRIMARY};
                 border: none;
-                border-radius: 30px;
-                font-size: 20px;
+                border-radius: 24px;
+                font-size: 18px;
             }}
             QPushButton:hover {{
                 background-color: rgba(183, 148, 246, 0.15);
@@ -50,8 +50,8 @@ class PlaybackControlsWidget(QWidget):
                 background-color: transparent;
                 color: {TEXT_PRIMARY};
                 border: 2px solid {TEXT_PRIMARY};
-                border-radius: 35px;
-                font-size: 24px;
+                border-radius: 28px;
+                font-size: 22px;
             }}
             QPushButton:hover {{
                 background-color: rgba(183, 148, 246, 0.2);
@@ -65,8 +65,8 @@ class PlaybackControlsWidget(QWidget):
         
         # Previous button
         self.prev_btn = QPushButton("◀")
-        self.prev_btn.setFixedSize(60, 60)
-        self.prev_btn.setFont(FontManager.get_title_font(18))
+        self.prev_btn.setFixedSize(48, 48)
+        self.prev_btn.setFont(FontManager.get_title_font(16))
         self.prev_btn.setCursor(Qt.PointingHandCursor)
         self.prev_btn.setStyleSheet(button_style)
         self.prev_btn.setToolTip("Previous track")
@@ -74,8 +74,8 @@ class PlaybackControlsWidget(QWidget):
         
         # Play/Pause button (larger)
         self.play_pause_btn = QPushButton("▶")
-        self.play_pause_btn.setFixedSize(70, 70)
-        self.play_pause_btn.setFont(FontManager.get_title_font(22))
+        self.play_pause_btn.setFixedSize(56, 56)
+        self.play_pause_btn.setFont(FontManager.get_title_font(20))
         self.play_pause_btn.setCursor(Qt.PointingHandCursor)
         self.play_pause_btn.setStyleSheet(large_button_style)
         self.play_pause_btn.setToolTip("Play")
@@ -83,8 +83,8 @@ class PlaybackControlsWidget(QWidget):
         
         # Next button
         self.next_btn = QPushButton("▶")
-        self.next_btn.setFixedSize(60, 60)
-        self.next_btn.setFont(FontManager.get_title_font(18))
+        self.next_btn.setFixedSize(48, 48)
+        self.next_btn.setFont(FontManager.get_title_font(16))
         self.next_btn.setCursor(Qt.PointingHandCursor)
         self.next_btn.setStyleSheet(button_style)
         self.next_btn.setToolTip("Next track")

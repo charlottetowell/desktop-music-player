@@ -235,18 +235,17 @@ class GroupHeaderWidget(QFrame):
         name_label.setWordWrap(True)
         text_container.addWidget(name_label)
         
-        # Artist name underneath (not after album name)
+        # Track count info
         if self.tracks:
             first_track = self.tracks[0]
             artist_name = first_track.artist if hasattr(first_track, 'artist') else "Unknown Artist"
         else:
             artist_name = "Unknown Artist"
             
-        artist_label = QLabel(artist_name)
-        artist_label.setFont(FontManager.get_small_font(9))
-        artist_label.setStyleSheet(f"color: {TEXT_SECONDARY}; background: transparent;")
-        artist_label.setWordWrap(True)
-        text_container.addWidget(artist_label)
+        count_info = QLabel(f"{track_count} tracks")
+        count_info.setFont(FontManager.get_small_font(9))
+        count_info.setStyleSheet(f"color: {TEXT_SECONDARY}; background: transparent;")
+        text_container.addWidget(count_info)
         
         layout.addLayout(text_container, 1)
         
