@@ -7,8 +7,8 @@ import re
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QPushButton, 
                                QScrollArea, QLabel, QFrame, QLineEdit)
 from PySide6.QtCore import Qt, Signal, QTimer, QPoint, QMimeData
-from PySide6.QtGui import QFont
 from ui.themes.colors import TEXT_PRIMARY, TEXT_SECONDARY, ACCENT_HOVER
+from ui.themes.fonts import FontManager
 from core.audio_scanner import AudioTrack
 
 
@@ -19,7 +19,7 @@ class GroupButton(QPushButton):
         super().__init__(text, parent)
         self.setCursor(Qt.PointingHandCursor)
         self.setCheckable(True)
-        self.setFont(QFont("Segoe UI", 9, QFont.Medium))
+        self.setFont(FontManager.get_body_font(9))
         self.setFixedHeight(32)
         self._update_style()
         self.toggled.connect(self._update_style)
@@ -77,14 +77,14 @@ class TrackItemWidget(QFrame):
         
         # Title
         title = QLabel(self.track.title)
-        title.setFont(QFont("Segoe UI", 10))
+        title.setFont(FontManager.get_body_font(10))
         title.setStyleSheet(f"color: {TEXT_PRIMARY}; background: transparent;")
         title.setWordWrap(False)
         title.setTextInteractionFlags(Qt.NoTextInteraction)  # Prevent text selection
         
         # Artist - Album info
         info = QLabel(f"{self.track.artist}")
-        info.setFont(QFont("Segoe UI", 9))
+        info.setFont(FontManager.get_small_font(9))
         info.setStyleSheet(f"color: {TEXT_SECONDARY}; background: transparent;")
         info.setWordWrap(False)
         
@@ -171,18 +171,18 @@ class GroupHeaderWidget(QFrame):
         
         # Group name
         name_label = QLabel(group_name)
-        name_label.setFont(QFont("Segoe UI", 11, QFont.Bold))
+        name_label.setFont(FontManager.get_title_font(11))
         name_label.setStyleSheet(f"color: {TEXT_PRIMARY}; background: transparent;")
         
         # Track count
         count_label = QLabel(f"{track_count} track{'s' if track_count != 1 else ''}")
-        count_label.setFont(QFont("Segoe UI", 9))
+        count_label.setFont(FontManager.get_small_font(9))
         count_label.setStyleSheet(f"color: {TEXT_SECONDARY}; background: transparent;")
         
         # Add album button
         add_btn = QPushButton("+ Add Album")
         add_btn.setFixedHeight(24)
-        add_btn.setFont(QFont("Segoe UI", 9))
+        add_btn.setFont(FontManager.get_small_font(9))
         add_btn.setCursor(Qt.PointingHandCursor)
         add_btn.setStyleSheet(f"""
             QPushButton {{
@@ -335,7 +335,7 @@ class TrackListWidget(QWidget):
         # Search input
         self.search_input = QLineEdit()
         self.search_input.setPlaceholderText("Search tracks, artists, albums...")
-        self.search_input.setFont(QFont("Segoe UI", 10))
+        self.search_input.setFont(FontManager.get_body_font(10))
         self.search_input.setFixedHeight(36)
         self.search_input.textChanged.connect(self._on_search_changed)
         self.search_input.setClearButtonEnabled(True)
@@ -509,7 +509,7 @@ class TrackListWidget(QWidget):
         """Show empty state message."""
         empty_label = QLabel("No tracks found\n\nSelect a music folder to get started")
         empty_label.setAlignment(Qt.AlignCenter)
-        empty_label.setFont(QFont("Segoe UI", 10))
+        empty_label.setFont(FontManager.get_body_font(10))
         empty_label.setStyleSheet(f"color: {TEXT_SECONDARY}; background: transparent; padding: 40px;")
         empty_label.setWordWrap(True)
         self.content_layout.insertWidget(0, empty_label)
@@ -518,7 +518,7 @@ class TrackListWidget(QWidget):
         """Show no search results message."""
         no_results = QLabel(f"No tracks match '{self.search_query}'\n\nTry a different search term")
         no_results.setAlignment(Qt.AlignCenter)
-        no_results.setFont(QFont("Segoe UI", 10))
+        no_results.setFont(FontManager.get_body_font(10))
         no_results.setStyleSheet(f"color: {TEXT_SECONDARY}; background: transparent; padding: 40px;")
         no_results.setWordWrap(True)
         self.content_layout.insertWidget(0, no_results)

@@ -5,7 +5,7 @@ Home screen widget - main 3-column interface
 from typing import Optional
 from PySide6.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QLabel
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QFont
+from ui.themes import FontManager
 from ui.widgets import Panel, SectionHeader, PlaceholderContent
 from ui.widgets.library_panel import LibraryPanel
 from ui.widgets.queue_widget import QueueWidget
@@ -141,10 +141,10 @@ class HomeScreen(QWidget):
         # App name
         logo = QLabel("Peachy Player")
         logo.setAlignment(Qt.AlignCenter)
-        logo.setFont(QFont("Segoe UI", 24, QFont.Bold))
+        logo.setFont(FontManager.get_display_font(24))
         logo.setStyleSheet("""
             QLabel {
-                color: #2b2b2b;
+                color: #ffffff;
                 background: transparent;
                 letter-spacing: 1px;
             }

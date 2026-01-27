@@ -6,8 +6,9 @@ from typing import Optional
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, 
                                QPushButton, QFrame)
 from PySide6.QtCore import Qt, Signal
-from PySide6.QtGui import QFont, QPixmap, QImage
-from ui.themes.colors import TEXT_PRIMARY, TEXT_SECONDARY, ACCENT_HOVER
+from PySide6.QtGui import QPixmap, QImage
+from ui.themes.colors import TEXT_PRIMARY, TEXT_SECONDARY, ACCENT_HOVER, BG_MID_PURPLE, ACCENT_LAVENDER
+from ui.themes import FontManager
 from core.audio_scanner import AudioTrack
 from ui.widgets.audio_visualizer_widget import AudioVisualizerWidget
 
@@ -41,10 +42,10 @@ class MiniPlayerWindow(QWidget):
         )
         
         self.setAttribute(Qt.WA_StyledBackground, True)
-        self.setStyleSheet("""
-            MiniPlayerWindow {
-                background-color: #fae8e5;
-            }
+        self.setStyleSheet(f"""
+            MiniPlayerWindow {{
+                background-color: {BG_MID_PURPLE};
+            }}
         """)
         
     def _setup_ui(self) -> None:
@@ -93,17 +94,17 @@ class MiniPlayerWindow(QWidget):
         info_layout.setAlignment(Qt.AlignVCenter)
         
         self.title_label = QLabel("No track playing")
-        self.title_label.setFont(QFont("Segoe UI", 12, QFont.Bold))
-        self.title_label.setStyleSheet(f"color: {TEXT_PRIMARY}; background: transparent;")
+        self.title_label.setFont(FontManager.get_body_font(12))
+        self.title_label.setStyleSheet(f"color: {TEXT_PRIMARY}; background: transparent; font-weight: bold;")
         self.title_label.setWordWrap(False)
         
         self.artist_label = QLabel("")
-        self.artist_label.setFont(QFont("Segoe UI", 10))
+        self.artist_label.setFont(FontManager.get_small_font(10))
         self.artist_label.setStyleSheet(f"color: {TEXT_SECONDARY}; background: transparent;")
         self.artist_label.setWordWrap(False)
         
         self.album_label = QLabel("")
-        self.album_label.setFont(QFont("Segoe UI", 9))
+        self.album_label.setFont(FontManager.get_small_font(9))
         self.album_label.setStyleSheet(f"color: {TEXT_SECONDARY}; background: transparent;")
         self.album_label.setWordWrap(False)
         
@@ -136,24 +137,24 @@ class MiniPlayerWindow(QWidget):
         
         large_button_style = f"""
             QPushButton {{
-                background-color: #6495ed;
+                background-color: {ACCENT_LAVENDER};
                 color: white;
                 border: none;
                 border-radius: 24px;
                 font-size: 18px;
             }}
             QPushButton:hover {{
-                background-color: #5080d0;
+                background-color: {ACCENT_HOVER};
             }}
             QPushButton:pressed {{
-                background-color: #4070c0;
+                background-color: rgba(183, 148, 246, 0.6);
             }}
         """
         
         # Previous button
         self.prev_btn = QPushButton("⏮")
         self.prev_btn.setFixedSize(40, 40)
-        self.prev_btn.setFont(QFont("Segoe UI", 14))
+        self.prev_btn.setFont(FontManager.get_body_font(14))
         self.prev_btn.setCursor(Qt.PointingHandCursor)
         self.prev_btn.setStyleSheet(button_style)
         self.prev_btn.setToolTip("Previous track")
@@ -162,7 +163,7 @@ class MiniPlayerWindow(QWidget):
         # Play/Pause button
         self.play_pause_btn = QPushButton("▶")
         self.play_pause_btn.setFixedSize(48, 48)
-        self.play_pause_btn.setFont(QFont("Segoe UI", 16))
+        self.play_pause_btn.setFont(FontManager.get_title_font(16))
         self.play_pause_btn.setCursor(Qt.PointingHandCursor)
         self.play_pause_btn.setStyleSheet(large_button_style)
         self.play_pause_btn.setToolTip("Play")
@@ -171,7 +172,7 @@ class MiniPlayerWindow(QWidget):
         # Next button
         self.next_btn = QPushButton("⏭")
         self.next_btn.setFixedSize(40, 40)
-        self.next_btn.setFont(QFont("Segoe UI", 14))
+        self.next_btn.setFont(FontManager.get_body_font(14))
         self.next_btn.setCursor(Qt.PointingHandCursor)
         self.next_btn.setStyleSheet(button_style)
         self.next_btn.setToolTip("Next track")
@@ -231,7 +232,7 @@ class MiniPlayerWindow(QWidget):
         """Set placeholder album art."""
         self.album_art_label.clear()
         self.album_art_label.setText("♪")
-        self.album_art_label.setFont(QFont("Segoe UI", 28))
+        self.album_art_label.setFont(FontManager.get_display_font(28))
         self.album_art_label.setAlignment(Qt.AlignCenter)
         
     def set_playing(self, playing: bool) -> None:

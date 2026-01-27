@@ -4,8 +4,8 @@ Main application window with frameless design
 
 from PySide6.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QStackedWidget
 from PySide6.QtCore import Qt, QPoint
-from PySide6.QtGui import QFont
 from ui.themes.colors import BG_PANEL, TEXT_PRIMARY, BORDER_LIGHT
+from ui.themes import FontManager
 
 
 class CustomTitleBar(QWidget):
@@ -26,7 +26,7 @@ class CustomTitleBar(QWidget):
         
         # App title
         title = QLabel("Peachy Player")
-        title.setFont(QFont("Segoe UI", 11, QFont.Medium))
+        title.setFont(FontManager.get_body_font(11))
         title.setStyleSheet(f"color: {TEXT_PRIMARY}; background: transparent;")
         
         # Window controls
@@ -36,7 +36,7 @@ class CustomTitleBar(QWidget):
         
         for btn in [self.minimize_btn, self.maximize_btn, self.close_btn]:
             btn.setFixedSize(40, 40)
-            btn.setFont(QFont("Segoe UI", 16))
+            btn.setFont(FontManager.get_title_font(16))
             btn.setCursor(Qt.PointingHandCursor)
             
         self.minimize_btn.clicked.connect(self.parent_window.showMinimized)

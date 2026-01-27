@@ -6,8 +6,9 @@ from typing import Optional
 from pathlib import Path
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QFileDialog
 from PySide6.QtCore import Qt, Signal, QThread
-from PySide6.QtGui import QFont, QIcon
+from PySide6.QtGui import QIcon
 from ui.themes.colors import TEXT_PRIMARY, TEXT_SECONDARY, TEXT_MUTED, ACCENT_HOVER
+from ui.themes.fonts import FontManager
 from ui.widgets import PlaceholderContent
 from ui.widgets.track_list import TrackListWidget
 from core.settings import Settings
@@ -63,7 +64,7 @@ class LibraryPanel(QWidget):
         
         # Status label
         self.status_label = QLabel("")
-        self.status_label.setFont(QFont("Segoe UI", 9))
+        self.status_label.setFont(FontManager.get_small_font(9))
         self.status_label.setStyleSheet(f"color: {TEXT_SECONDARY}; background: transparent; padding: 0 24px;")
         self.status_label.setAlignment(Qt.AlignCenter)
         self.status_label.hide()
@@ -94,7 +95,7 @@ class LibraryPanel(QWidget):
         
         # Title
         title = QLabel("My Library")
-        title.setFont(QFont("Segoe UI", 14, QFont.Bold))
+        title.setFont(FontManager.get_title_font(14))
         title.setStyleSheet(f"color: {TEXT_PRIMARY}; background: transparent;")
         title_row.addWidget(title)
         
@@ -104,7 +105,7 @@ class LibraryPanel(QWidget):
         
         # Folder path display
         self.path_label = QLabel("No folder selected")
-        self.path_label.setFont(QFont("Segoe UI", 9))
+        self.path_label.setFont(FontManager.get_small_font(9))
         self.path_label.setStyleSheet(f"color: {TEXT_SECONDARY}; background: transparent;")
         self.path_label.setWordWrap(True)
         self.path_label.setAlignment(Qt.AlignRight | Qt.AlignTop)
@@ -134,7 +135,7 @@ class LibraryPanel(QWidget):
             self.folder_btn.setIconSize(self.folder_btn.size() * 0.6)
         else:
             self.folder_btn.setText("📁")
-            self.folder_btn.setFont(QFont("Segoe UI", 20))
+            self.folder_btn.setFont(FontManager.get_display_font(20))
         
         self.folder_btn.setStyleSheet(f"""
             QPushButton {{

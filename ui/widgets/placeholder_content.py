@@ -4,8 +4,8 @@ Placeholder content widget for development
 
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QFont
 from ui.themes.colors import TEXT_MUTED
+from ui.themes.fonts import FontManager
 
 
 class PlaceholderContent(QWidget):
@@ -24,7 +24,7 @@ class PlaceholderContent(QWidget):
         
         label = QLabel(self._text)
         label.setAlignment(Qt.AlignCenter)
-        label.setFont(QFont("Segoe UI", 11))
+        label.setFont(FontManager.get_body_font(11))
         label.setWordWrap(True)
         label.setStyleSheet(f"""
             QLabel {{

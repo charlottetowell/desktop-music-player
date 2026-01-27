@@ -4,8 +4,8 @@ Loading screen widget with progress indicator
 
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel, QProgressBar
 from PySide6.QtCore import Qt, QTimer, Signal
-from PySide6.QtGui import QFont
 from ui.themes.colors import ACCENT_LAVENDER, TEXT_PRIMARY, TEXT_SECONDARY, BG_PANEL
+from ui.themes import FontManager
 
 
 class LoadingScreen(QWidget):
@@ -32,15 +32,13 @@ class LoadingScreen(QWidget):
         # App title
         title = QLabel("Peachy Player")
         title.setAlignment(Qt.AlignCenter)
-        title_font = QFont("Segoe UI", 24, QFont.Bold)
-        title.setFont(title_font)
+        title.setFont(FontManager.get_display_font(24))
         title.setStyleSheet(f"color: {TEXT_PRIMARY}; background: transparent;")
         
         # Loading text
         self.loading_label = QLabel("Initializing...")
         self.loading_label.setAlignment(Qt.AlignCenter)
-        loading_font = QFont("Segoe UI", 11)
-        self.loading_label.setFont(loading_font)
+        self.loading_label.setFont(FontManager.get_body_font(11))
         self.loading_label.setStyleSheet(f"color: {TEXT_SECONDARY}; background: transparent;")
         
         # Progress bar

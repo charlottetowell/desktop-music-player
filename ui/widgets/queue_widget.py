@@ -7,8 +7,9 @@ from pathlib import Path
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, 
                                QScrollArea, QFrame, QPushButton)
 from PySide6.QtCore import Qt, Signal, QMimeData, QPoint, QSize, QByteArray
-from PySide6.QtGui import QFont, QDrag, QPixmap, QPainter, QColor, QImage
+from PySide6.QtGui import QDrag, QPixmap, QPainter, QColor, QImage
 from ui.themes.colors import TEXT_PRIMARY, TEXT_SECONDARY, TEXT_MUTED, ACCENT_HOVER
+from ui.themes.fonts import FontManager
 from core.audio_scanner import AudioTrack
 from core.queue_manager import QueueManager
 
@@ -42,13 +43,13 @@ class QueueTrackWidget(QFrame):
         
         # Title
         title = QLabel(self.track.title)
-        title.setFont(QFont("Segoe UI", 10, QFont.Bold if self.is_current else QFont.Normal))
+        title.setFont(FontManager.get_body_font(10) if not self.is_current else FontManager.get_title_font(10))
         title.setStyleSheet(f"color: {TEXT_PRIMARY}; background: transparent;")
         title.setWordWrap(False)
         
         # Artist
         artist = QLabel(self.track.artist)
-        artist.setFont(QFont("Segoe UI", 9))
+        artist.setFont(FontManager.get_small_font(9))
         artist.setStyleSheet(f"color: {TEXT_SECONDARY}; background: transparent;")
         artist.setWordWrap(False)
         
@@ -61,7 +62,7 @@ class QueueTrackWidget(QFrame):
         if not self.read_only:
             remove_btn = QPushButton("×")
             remove_btn.setFixedSize(24, 24)
-            remove_btn.setFont(QFont("Segoe UI", 14))
+            remove_btn.setFont(FontManager.get_display_font(14))
             remove_btn.setCursor(Qt.PointingHandCursor)
             remove_btn.setStyleSheet(f"""
                 QPushButton {{
@@ -191,19 +192,19 @@ class AlbumGroupWidget(QFrame):
             """)
             cover_label.setAlignment(Qt.AlignCenter)
             cover_label.setText("♪")
-            cover_label.setFont(QFont("Segoe UI", 16))
+            cover_label.setFont(FontManager.get_title_font(16))
             
         # Album info
         info_layout = QVBoxLayout()
         info_layout.setSpacing(2)
         
         album_label = QLabel(self.album_name)
-        album_label.setFont(QFont("Segoe UI", 11, QFont.Bold))
+        album_label.setFont(FontManager.get_title_font(11))
         album_label.setStyleSheet(f"color: {TEXT_PRIMARY}; background: transparent;")
         album_label.setWordWrap(False)
         
         artist_label = QLabel(self.artist_name)
-        artist_label.setFont(QFont("Segoe UI", 9))
+        artist_label.setFont(FontManager.get_small_font(9))
         artist_label.setStyleSheet(f"color: {TEXT_SECONDARY}; background: transparent;")
         artist_label.setWordWrap(False)
         
@@ -262,7 +263,7 @@ class QueueWidget(QWidget):
         header_layout.setSpacing(8)
         
         up_next_label = QLabel("Up Next")
-        up_next_label.setFont(QFont("Segoe UI", 12, QFont.Bold))
+        up_next_label.setFont(FontManager.get_title_font(12))
         up_next_label.setStyleSheet(f"color: {TEXT_PRIMARY}; background: transparent;")
         header_layout.addWidget(up_next_label)
         
@@ -270,7 +271,7 @@ class QueueWidget(QWidget):
         
         # Clear Queue button
         self.clear_btn = QPushButton("Clear Queue")
-        self.clear_btn.setFont(QFont("Segoe UI", 9))
+        self.clear_btn.setFont(FontManager.get_small_font(9))
         self.clear_btn.setCursor(Qt.PointingHandCursor)
         self.clear_btn.setStyleSheet(f"""
             QPushButton {{
@@ -318,7 +319,7 @@ class QueueWidget(QWidget):
         
         # Just Played Section (Bottom)
         just_played_label = QLabel("Just Played")
-        just_played_label.setFont(QFont("Segoe UI", 12, QFont.Bold))
+        just_played_label.setFont(FontManager.get_title_font(12))
         just_played_label.setStyleSheet(f"color: {TEXT_SECONDARY}; background: transparent; padding: 8px 16px 8px 16px;")
         main_layout.addWidget(just_played_label)
         
@@ -409,7 +410,7 @@ class QueueWidget(QWidget):
         else:
             empty_label = QLabel("No upcoming tracks")
             empty_label.setAlignment(Qt.AlignCenter)
-            empty_label.setFont(QFont("Segoe UI", 10))
+            empty_label.setFont(FontManager.get_body_font(10))
             empty_label.setStyleSheet(f"color: {TEXT_MUTED}; background: transparent; padding: 40px;")
             self.up_next_layout.insertWidget(0, empty_label)
         
@@ -420,7 +421,7 @@ class QueueWidget(QWidget):
         else:
             empty_label = QLabel("No played tracks yet")
             empty_label.setAlignment(Qt.AlignCenter)
-            empty_label.setFont(QFont("Segoe UI", 10))
+            empty_label.setFont(FontManager.get_body_font(10))
             empty_label.setStyleSheet(f"color: {TEXT_MUTED}; background: transparent; padding: 40px;")
             self.just_played_layout.insertWidget(0, empty_label)
     
@@ -486,7 +487,7 @@ class QueueWidget(QWidget):
         """Show empty queue message."""
         empty_label = QLabel("Queue is empty\n\nDouble-click or drag tracks\nfrom your library to add them")
         empty_label.setAlignment(Qt.AlignCenter)
-        empty_label.setFont(QFont("Segoe UI", 11))
+        empty_label.setFont(FontManager.get_body_font(11))
         empty_label.setStyleSheet(f"color: {TEXT_SECONDARY}; background: transparent; padding: 60px;")
         empty_label.setWordWrap(True)
         self.up_next_layout.insertWidget(0, empty_label)

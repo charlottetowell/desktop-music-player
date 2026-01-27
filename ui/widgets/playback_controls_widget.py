@@ -4,8 +4,8 @@ Playback controls widget - play/pause, next, previous buttons
 
 from PySide6.QtWidgets import QWidget, QHBoxLayout, QPushButton
 from PySide6.QtCore import Qt, Signal
-from PySide6.QtGui import QFont
 from ui.themes.colors import TEXT_PRIMARY, ACCENT_HOVER
+from ui.themes.fonts import FontManager
 
 
 class PlaybackControlsWidget(QWidget):
@@ -64,7 +64,7 @@ class PlaybackControlsWidget(QWidget):
         # Previous button
         self.prev_btn = QPushButton("⏮")
         self.prev_btn.setFixedSize(48, 48)
-        self.prev_btn.setFont(QFont("Segoe UI", 16))
+        self.prev_btn.setFont(FontManager.get_title_font(16))
         self.prev_btn.setCursor(Qt.PointingHandCursor)
         self.prev_btn.setStyleSheet(button_style)
         self.prev_btn.setToolTip("Previous track")
@@ -73,7 +73,7 @@ class PlaybackControlsWidget(QWidget):
         # Play/Pause button (larger)
         self.play_pause_btn = QPushButton("▶")
         self.play_pause_btn.setFixedSize(56, 56)
-        self.play_pause_btn.setFont(QFont("Segoe UI", 18))
+        self.play_pause_btn.setFont(FontManager.get_title_font(18))
         self.play_pause_btn.setCursor(Qt.PointingHandCursor)
         self.play_pause_btn.setStyleSheet(large_button_style)
         self.play_pause_btn.setToolTip("Play")
@@ -82,7 +82,7 @@ class PlaybackControlsWidget(QWidget):
         # Next button
         self.next_btn = QPushButton("⏭")
         self.next_btn.setFixedSize(48, 48)
-        self.next_btn.setFont(QFont("Segoe UI", 16))
+        self.next_btn.setFont(FontManager.get_title_font(16))
         self.next_btn.setCursor(Qt.PointingHandCursor)
         self.next_btn.setStyleSheet(button_style)
         self.next_btn.setToolTip("Next track")

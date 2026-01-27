@@ -4,8 +4,8 @@ Reusable panel widget component
 
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QFont
 from ui.themes.colors import TEXT_PRIMARY, TEXT_SECONDARY
+from ui.themes.fonts import FontManager
 
 
 class Panel(QWidget):
@@ -28,7 +28,7 @@ class Panel(QWidget):
         if self._title:
             self.header = QLabel(self._title)
             self.header.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
-            self.header.setFont(QFont("Segoe UI", 14, QFont.Bold))
+            self.header.setFont(FontManager.get_title_font(14))
             self.header.setStyleSheet(f"""
                 QLabel {{
                     color: {TEXT_PRIMARY};

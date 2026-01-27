@@ -5,8 +5,9 @@ Now Playing widget - displays current track information
 from typing import Optional
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QSlider, QFrame, QPushButton
 from PySide6.QtCore import Qt, Signal
-from PySide6.QtGui import QFont, QPixmap, QImage
+from PySide6.QtGui import QPixmap, QImage
 from ui.themes.colors import TEXT_PRIMARY, TEXT_SECONDARY, TEXT_MUTED, ACCENT_HOVER
+from ui.themes.fonts import FontManager
 from core.audio_scanner import AudioTrack
 from ui.widgets.audio_visualizer_widget import AudioVisualizerWidget
 
@@ -58,21 +59,21 @@ class NowPlayingWidget(QWidget):
         # Track title
         self.title_label = QLabel("No track playing")
         self.title_label.setAlignment(Qt.AlignCenter)
-        self.title_label.setFont(QFont("Segoe UI", 16, QFont.Bold))
+        self.title_label.setFont(FontManager.get_title_font(16))
         self.title_label.setStyleSheet(f"color: {TEXT_PRIMARY}; background: transparent;")
         self.title_label.setWordWrap(True)
         
         # Artist
         self.artist_label = QLabel("")
         self.artist_label.setAlignment(Qt.AlignCenter)
-        self.artist_label.setFont(QFont("Segoe UI", 12))
+        self.artist_label.setFont(FontManager.get_body_font(12))
         self.artist_label.setStyleSheet(f"color: {TEXT_SECONDARY}; background: transparent;")
         self.artist_label.setWordWrap(True)
         
         # Album & Year
         self.album_label = QLabel("")
         self.album_label.setAlignment(Qt.AlignCenter)
-        self.album_label.setFont(QFont("Segoe UI", 10))
+        self.album_label.setFont(FontManager.get_small_font(10))
         self.album_label.setStyleSheet(f"color: {TEXT_SECONDARY}; background: transparent;")
         self.album_label.setWordWrap(True)
         
@@ -90,11 +91,11 @@ class NowPlayingWidget(QWidget):
         # Time labels
         time_layout = QHBoxLayout()
         self.current_time_label = QLabel("0:00")
-        self.current_time_label.setFont(QFont("Segoe UI", 9))
+        self.current_time_label.setFont(FontManager.get_small_font(9))
         self.current_time_label.setStyleSheet(f"color: {TEXT_SECONDARY}; background: transparent;")
         
         self.total_time_label = QLabel("0:00")
-        self.total_time_label.setFont(QFont("Segoe UI", 9))
+        self.total_time_label.setFont(FontManager.get_small_font(9))
         self.total_time_label.setStyleSheet(f"color: {TEXT_SECONDARY}; background: transparent;")
         
         time_layout.addWidget(self.current_time_label)
@@ -140,7 +141,7 @@ class NowPlayingWidget(QWidget):
         # Mini Player button
         layout.addSpacing(12)
         mini_player_btn = QPushButton("Open Mini Player")
-        mini_player_btn.setFont(QFont("Segoe UI", 10))
+        mini_player_btn.setFont(FontManager.get_body_font(10))
         mini_player_btn.setCursor(Qt.PointingHandCursor)
         mini_player_btn.setStyleSheet(f"""
             QPushButton {{
@@ -232,7 +233,7 @@ class NowPlayingWidget(QWidget):
         """Show default album art placeholder."""
         self.album_art_label.clear()
         self.album_art_label.setText("♪")
-        self.album_art_label.setFont(QFont("Segoe UI", 64))
+        self.album_art_label.setFont(FontManager.get_display_font(64))
         self.album_art_label.setStyleSheet(f"""
             QLabel {{
                 background-color: rgba(0, 0, 0, 0.1);

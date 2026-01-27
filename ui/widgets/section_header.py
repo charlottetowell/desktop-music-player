@@ -4,8 +4,8 @@ Reusable section header component
 
 from PySide6.QtWidgets import QWidget, QHBoxLayout, QLabel
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QFont
 from ui.themes.colors import TEXT_PRIMARY, TEXT_SECONDARY
+from ui.themes.fonts import FontManager
 
 
 class SectionHeader(QWidget):
@@ -27,7 +27,7 @@ class SectionHeader(QWidget):
         
         # Title
         title_label = QLabel(self._title)
-        title_label.setFont(QFont("Segoe UI", 13, QFont.Bold))
+        title_label.setFont(FontManager.get_title_font(13))
         title_label.setStyleSheet(f"color: {TEXT_PRIMARY}; background: transparent;")
         
         layout.addWidget(title_label)
@@ -35,7 +35,7 @@ class SectionHeader(QWidget):
         # Optional subtitle
         if self._subtitle:
             self.subtitle_label = QLabel(self._subtitle)
-            self.subtitle_label.setFont(QFont("Segoe UI", 10))
+            self.subtitle_label.setFont(FontManager.get_body_font(10))
             self.subtitle_label.setStyleSheet(f"color: {TEXT_SECONDARY}; background: transparent;")
             layout.addWidget(self.subtitle_label)
         
