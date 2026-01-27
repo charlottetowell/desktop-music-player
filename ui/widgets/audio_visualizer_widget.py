@@ -83,19 +83,19 @@ class AudioVisualizerWidget(QWidget):
         self.update_timer.timeout.connect(self._update_visualization)
         self.update_timer.setInterval(33)  # ~30 FPS
         
-        # Gradient colors (modern peachy gradient)
+        # Gradient colors (purple theme)
         self.gradient_colors = [
-            QColor("#ff6b6b"),  # Red
-            QColor("#ff8787"),  # Light red
-            QColor("#ffa07a"),  # Orange
-            QColor("#ffc0cb"),  # Pink
+            QColor("#b794f6"),  # Lavender
+            QColor("#9d7ed9"),  # Purple
+            QColor("#7b5db8"),  # Deep purple
+            QColor("#5a3d99"),  # Darker purple
         ]
         
         self.setAttribute(Qt.WA_StyledBackground, True)
         self.setStyleSheet("""
             AudioVisualizerWidget {
-                background-color: rgba(0, 0, 0, 0.03);
-                border-radius: 8px;
+                background-color: transparent;
+                border-radius: 0px;
             }
         """)
         

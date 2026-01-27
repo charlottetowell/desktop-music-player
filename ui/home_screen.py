@@ -6,6 +6,7 @@ from typing import Optional
 from PySide6.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QLabel
 from PySide6.QtCore import Qt
 from ui.themes import FontManager
+from ui.themes.colors import BG_SIDEBAR, BG_DEEP_PURPLE
 from ui.widgets import Panel, SectionHeader, PlaceholderContent
 from ui.widgets.library_panel import LibraryPanel
 from ui.widgets.queue_widget import QueueWidget
@@ -101,7 +102,11 @@ class HomeScreen(QWidget):
         
     def _create_playing_panel(self) -> Panel:
         """Create right panel for currently playing track."""
-        panel = Panel(title="Currently Playing", background_color="#fec5bb")
+        panel = Panel(title="Currently Playing", background_color=BG_SIDEBAR, show_mini_player=True)
+        
+        # Connect mini player button
+        if panel.mini_player_btn:
+            panel.mini_player_btn.clicked.connect(self._on_open_mini_player)
         
         # Now playing widget
         self.now_playing_widget = NowPlayingWidget()

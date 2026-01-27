@@ -6,7 +6,7 @@ from typing import Optional
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QSlider, QFrame, QPushButton
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QPixmap, QImage
-from ui.themes.colors import TEXT_PRIMARY, TEXT_SECONDARY, TEXT_MUTED, ACCENT_HOVER
+from ui.themes.colors import TEXT_PRIMARY, TEXT_SECONDARY, TEXT_MUTED, ACCENT_LAVENDER, ACCENT_CORAL
 from ui.themes.fonts import FontManager
 from core.audio_scanner import AudioTrack
 from ui.widgets.audio_visualizer_widget import AudioVisualizerWidget
@@ -28,20 +28,19 @@ class NowPlayingWidget(QWidget):
     def _setup_ui(self) -> None:
         """Initialize UI components."""
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(24, 24, 24, 24)
-        layout.setSpacing(20)
+        layout.setContentsMargins(24, 0, 24, 24)
+        layout.setSpacing(12)
         layout.setAlignment(Qt.AlignTop)
         
         # Album art
         self.album_art_label = QLabel()
-        self.album_art_label.setFixedSize(200, 200)
+        self.album_art_label.setFixedSize(250, 250)
         self.album_art_label.setAlignment(Qt.AlignCenter)
-        self.album_art_label.setStyleSheet(f"""
-            QLabel {{
-                background-color: rgba(0, 0, 0, 0.1);
-                border-radius: 8px;
-                border: 2px solid rgba(0, 0, 0, 0.1);
-            }}
+        self.album_art_label.setStyleSheet("""
+            QLabel {
+                background-color: transparent;
+                border: none;
+            }
         """)
         
         # Center album art
@@ -51,40 +50,42 @@ class NowPlayingWidget(QWidget):
         art_container.addStretch()
         layout.addLayout(art_container)
         
+        # Add spacing after album art
+        layout.addSpacing(12)
+        
         # Track info
         info_layout = QVBoxLayout()
-        info_layout.setSpacing(8)
+        info_layout.setSpacing(6)
         info_layout.setAlignment(Qt.AlignCenter)
         
         # Track title
         self.title_label = QLabel("No track playing")
         self.title_label.setAlignment(Qt.AlignCenter)
-        self.title_label.setFont(FontManager.get_title_font(16))
-        self.title_label.setStyleSheet(f"color: {TEXT_PRIMARY}; background: transparent;")
+        self.title_label.setFont(FontManager.get_title_font(18))
+        self.title_label.setStyleSheet(f"color: {TEXT_PRIMARY}; background: transparent; font-weight: bold;")
         self.title_label.setWordWrap(True)
+        self.title_label.setMaximumHeight(60)
         
-        # Artist
+        # Artist & Album (combined)
         self.artist_label = QLabel("")
         self.artist_label.setAlignment(Qt.AlignCenter)
-        self.artist_label.setFont(FontManager.get_body_font(12))
+        self.artist_label.setFont(FontManager.get_body_font(14))
         self.artist_label.setStyleSheet(f"color: {TEXT_SECONDARY}; background: transparent;")
         self.artist_label.setWordWrap(True)
-        
-        # Album & Year
-        self.album_label = QLabel("")
-        self.album_label.setAlignment(Qt.AlignCenter)
-        self.album_label.setFont(FontManager.get_small_font(10))
-        self.album_label.setStyleSheet(f"color: {TEXT_SECONDARY}; background: transparent;")
-        self.album_label.setWordWrap(True)
+        self.artist_label.setMaximumHeight(50)
         
         info_layout.addWidget(self.title_label)
         info_layout.addWidget(self.artist_label)
-        info_layout.addWidget(self.album_label)
         
         layout.addLayout(info_layout)
         layout.addSpacing(12)
         
+        # Audio visualizer
+        self.visualizer = AudioVisualizerWidget()
+        layout.addWidget(self.visualizer)
+        
         # Progress bar section
+        layout.addSpacing(8)
         progress_layout = QVBoxLayout()
         progress_layout.setSpacing(8)
         
@@ -107,23 +108,23 @@ class NowPlayingWidget(QWidget):
         self.progress_slider.setMinimum(0)
         self.progress_slider.setMaximum(1000)  # Use 1000 for smooth progress
         self.progress_slider.setValue(0)
-        self.progress_slider.setStyleSheet("""
-            QSlider::groove:horizontal {
-                background: rgba(0, 0, 0, 0.1);
+        self.progress_slider.setStyleSheet(f"""
+            QSlider::groove:horizontal {{
+                background: rgba(183, 148, 246, 0.2);
                 height: 6px;
                 border-radius: 3px;
-            }
-            QSlider::handle:horizontal {
-                background: #6495ed;
-                width: 14px;
-                height: 14px;
-                margin: -4px 0;
-                border-radius: 7px;
-            }
-            QSlider::sub-page:horizontal {
-                background: #6495ed;
+            }}
+            QSlider::handle:horizontal {{
+                background: {ACCENT_LAVENDER};
+                width: 16px;
+                height: 16px;
+                margin: -5px 0;
+                border-radius: 8px;
+            }}
+            QSlider::sub-page:horizontal {{
+                background: {ACCENT_LAVENDER};
                 border-radius: 3px;
-            }
+            }}
         """)
         self.progress_slider.sliderPressed.connect(self._on_slider_pressed)
         self.progress_slider.sliderReleased.connect(self._on_slider_released)
@@ -132,41 +133,6 @@ class NowPlayingWidget(QWidget):
         progress_layout.addLayout(time_layout)
         
         layout.addLayout(progress_layout)
-        
-        # Audio visualizer
-        layout.addSpacing(16)
-        self.visualizer = AudioVisualizerWidget()
-        layout.addWidget(self.visualizer)
-        
-        # Mini Player button
-        layout.addSpacing(12)
-        mini_player_btn = QPushButton("Open Mini Player")
-        mini_player_btn.setFont(FontManager.get_body_font(10))
-        mini_player_btn.setCursor(Qt.PointingHandCursor)
-        mini_player_btn.setStyleSheet(f"""
-            QPushButton {{
-                background-color: rgba(100, 149, 237, 0.15);
-                color: #6495ed;
-                border: 1px solid rgba(100, 149, 237, 0.3);
-                border-radius: 6px;
-                padding: 10px 20px;
-            }}
-            QPushButton:hover {{
-                background-color: rgba(100, 149, 237, 0.25);
-                border-color: rgba(100, 149, 237, 0.5);
-            }}
-            QPushButton:pressed {{
-                background-color: rgba(100, 149, 237, 0.35);
-            }}
-        """)
-        mini_player_btn.clicked.connect(self.mini_player_requested.emit)
-        
-        btn_container = QHBoxLayout()
-        btn_container.addStretch()
-        btn_container.addWidget(mini_player_btn)
-        btn_container.addStretch()
-        layout.addLayout(btn_container)
-        
         layout.addStretch()
         
         self.setStyleSheet("NowPlayingWidget { background: transparent; }")
@@ -180,12 +146,12 @@ class NowPlayingWidget(QWidget):
         
         # Update track info
         self.title_label.setText(track.title)
-        self.artist_label.setText(track.artist)
         
-        album_text = track.album
-        if track.year and track.year != "Unknown":
-            album_text += f" • {track.year}"
-        self.album_label.setText(album_text)
+        # Combine artist and album with separator
+        artist_album = track.artist
+        if track.album and track.album != "Unknown":
+            artist_album += f" | {track.album}"
+        self.artist_label.setText(artist_album)
         
         # Update album art
         if track.album_art_data:
@@ -223,7 +189,7 @@ class NowPlayingWidget(QWidget):
             image = QImage()
             if image.loadFromData(QByteArray(image_data)):
                 pixmap = QPixmap.fromImage(image)
-                scaled = pixmap.scaled(200, 200, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+                scaled = pixmap.scaled(250, 250, Qt.KeepAspectRatio, Qt.SmoothTransformation)
                 self.album_art_label.setPixmap(scaled)
         except Exception as e:
             print(f"Error loading album art: {e}")
@@ -236,9 +202,8 @@ class NowPlayingWidget(QWidget):
         self.album_art_label.setFont(FontManager.get_display_font(64))
         self.album_art_label.setStyleSheet(f"""
             QLabel {{
-                background-color: rgba(0, 0, 0, 0.1);
-                border-radius: 8px;
-                border: 2px solid rgba(0, 0, 0, 0.1);
+                background-color: transparent;
+                border: none;
                 color: {TEXT_MUTED};
             }}
         """)
@@ -248,7 +213,6 @@ class NowPlayingWidget(QWidget):
         self._show_default_art()
         self.title_label.setText("No track playing")
         self.artist_label.setText("")
-        self.album_label.setText("")
         self.current_time_label.setText("0:00")
         self.total_time_label.setText("0:00")
         self.progress_slider.setValue(0)
