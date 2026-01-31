@@ -17,9 +17,13 @@ datas = [
 
 # Hidden imports for dynamic modules
 hiddenimports = [
+    'PySide6',
     'PySide6.QtCore',
     'PySide6.QtGui',
     'PySide6.QtWidgets',
+    'PySide6.QtMultimedia',
+    'PySide6.QtSvg',
+    'shiboken6',
     'miniaudio',
     'numpy',
     'soundfile',
