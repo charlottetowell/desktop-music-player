@@ -50,24 +50,30 @@ python3 -m venv venv
 source venv/bin/activate
 ```
 
-#### Step 3: Install Dependencies
+#### Step 3: Install System Dependencies (Linux only)
+```bash
+sudo apt-get update
+sudo apt-get install libdbus-1-dev libglib2.0-dev
+```
+
+#### Step 4: Install Python Dependencies
 ```bash
 pip install -r requirements.txt
 ```
 
-#### Step 4: Run the Application
+#### Step 5: Run the Application
 ```bash
 python main.py
 ```
 
 ## Desktop Installation
 
-#### Step 1: Install Build Tools
+Install additional build requirements:
 ```bash
 pip install -r build_requirements.txt
 ```
 
-#### Step 2: Build the Application
+After following the same steps for how to run locally, run the build script as below:
 
 **Windows:**
 ```bash
@@ -82,7 +88,7 @@ chmod +x scripts/build_linux.sh
 
 > Note: expect the script to take 3-5 mins to execute.
 
-#### Step 3: Locate the Executable
+#### Step 4: Locate the Executable
 
 After building, the standalone application will be located at:
 - **Windows**: `dist\DesktopMusicPlayer\DesktopMusicPlayer.exe`
