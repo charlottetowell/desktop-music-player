@@ -2,7 +2,7 @@
 
 A desktop audio player for Windows & Linux with real-time visualization, built with Python and Qt.
 
-Built for the [Github Copilot CLI Challenge](https://dev.to/challenges/github-2026-01-21) hosted by dev.to. See my entry blog + demo here: [Desktop Music Player Using QT for Python - Built with Github Copilot CLI]()
+Built for the [Github Copilot CLI Challenge](https://dev.to/challenges/github-2026-01-21) hosted by dev.to. See my entry blog + **demo** here: [Desktop Music Player Using QT for Python - Built with Github Copilot CLI](https://dev.to/charlottetowell/desktop-music-player-using-qt-for-python-built-with-github-copilot-cli-45mk)
 
 **In this README:**
 * [Features 🎶](#features-)
