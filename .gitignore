@@ -38,3 +38,8 @@ Thumbs.db
 # Application specific
 *.log
 config.ini
+
+# PyInstaller
+*.spec.bak
+*.manifest
+*.exe.manifest

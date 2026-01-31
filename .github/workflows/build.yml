@@ -1,0 +1,104 @@
+name: Build Executables
+
+on:
+  push:
+    tags:
+      - 'v*'  # Triggers on version tags like v1.0.0
+  workflow_dispatch:  # Allows manual triggering
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install -r build_requirements.txt
+    
+    - name: Build Windows executable
+      run: |
+        scripts\build_windows.bat
+    
+    - name: Create archive
+      run: |
+        Compress-Archive -Path dist\DesktopMusicPlayer\* -DestinationPath DesktopMusicPlayer-Windows-x64.zip
+    
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: windows-build
+        path: DesktopMusicPlayer-Windows-x64.zip
+
+  build-linux:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+    
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y python3-dev portaudio19-dev libdbus-1-dev
+    
+    - name: Install Python dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install -r build_requirements.txt
+    
+    - name: Build Linux executable
+      run: |
+        chmod +x scripts/build_linux.sh
+        ./scripts/build_linux.sh
+    
+    - name: Create archive
+      run: |
+        cd dist
+        tar -czf ../DesktopMusicPlayer-Linux-x64.tar.gz DesktopMusicPlayer/
+    
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: linux-build
+        path: DesktopMusicPlayer-Linux-x64.tar.gz
+
+  create-release:
+    needs: [build-windows, build-linux]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    
+    steps:
+    - name: Download Windows build
+      uses: actions/download-artifact@v4
+      with:
+        name: windows-build
+    
+    - name: Download Linux build
+      uses: actions/download-artifact@v4
+      with:
+        name: linux-build
+    
+    - name: Create Release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: |
+          DesktopMusicPlayer-Windows-x64.zip
+          DesktopMusicPlayer-Linux-x64.tar.gz
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

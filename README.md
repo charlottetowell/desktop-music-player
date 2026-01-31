@@ -1,19 +1,27 @@
 # Desktop Music Player
 
-A cross-platform desktop audio player with real-time visualization, built with Python and Qt.
+A desktop audio player for Windows & Linux with real-time visualization, built with Python and Qt.
 
-## Features
+Built for the [Github Copilot CLI Challenge](https://dev.to/challenges/github-2026-01-21) hosted by dev.to. See my entry blog + demo here: [Desktop Music Player Using QT for Python - Built with Github Copilot CLI]()
+
+**In this README:**
+* [Features 🎶](#features-)
+* [Tech Stack 💻](#tech-stack-)
+* [Running Locally](#running-locally)
+* [Desktop Installation](#desktop-installation)
+* [Project Structure](#project-structure)
+
+## Features 🎶
 
 - **Cross-Platform**: Windows & Linux support
 - **OS Media Key Integration**: Control playback with keyboard media keys
-- **Modern UI**: Frameless window with custom title bar and mini-mode
+- **Mini player**: A pop-out mini player window with audio waveform visualisation
 - **Audio Playback**: Full playback engine with controls and playback history
 - **Queue Management**: Add, reorder, and remove tracks with drag-and-drop
 - **Library Scanner**: Auto-discover audio files with metadata extraction (MP3, FLAC, WAV, OGG, M4A, AAC)
 - **Real-Time Audio Visualizer**: Waveform display with smooth animations
-- **MVVM Architecture**: Clean separation between audio engine and UI
 
-## Tech Stack
+## Tech Stack 💻
 
 - **UI**: PySide6 (Qt for Python)
 - **Audio**: miniaudio (playback), mutagen (metadata), librosa (analysis)
@@ -21,29 +29,64 @@ A cross-platform desktop audio player with real-time visualization, built with P
 - **Media Keys**: Qt shortcuts (Windows) + MPRIS2 (Linux)
 - **Threading**: Worker threads for audio decoding and analysis
 
-## Installation
+## Running Locally
 
-### Prerequisites
-- Python 3.8+
-- Windows 7+ or Linux with D-Bus
-
-### Setup
+#### Step 1: Clone the Repository
 ```bash
-git clone <repository-url>
+git clone https://github.com/charlottetowell/desktop-music-player
 cd desktop-music-player
+```
 
-# Create virtual environment
+#### Step 2: Set Up Virtual Environment
+**Windows:**
+```bash
 python -m venv venv
-source venv/Scripts/activate  # Windows: venv\Scripts\activate
+venv\Scripts\activate
+```
 
-# Install dependencies
+**Linux:**
+```bash
+python3 -m venv venv
+source venv/bin/activate
+```
+
+#### Step 3: Install Dependencies
+```bash
 pip install -r requirements.txt
 ```
 
-### Run
+#### Step 4: Run the Application
 ```bash
 python main.py
 ```
+
+## Desktop Installation
+
+#### Step 1: Install Build Tools
+```bash
+pip install -r build_requirements.txt
+```
+
+#### Step 2: Build the Application
+
+**Windows:**
+```bash
+scripts\build_windows.bat
+```
+
+**Linux:**
+```bash
+chmod +x scripts/build_linux.sh
+./scripts/build_linux.sh
+```
+
+> Note: expect the script to take 3-5 mins to execute.
+
+#### Step 3: Locate the Executable
+
+After building, the standalone application will be located at:
+- **Windows**: `dist\DesktopMusicPlayer\DesktopMusicPlayer.exe`
+- **Linux**: `dist/DesktopMusicPlayer/DesktopMusicPlayer`
 
 ## Project Structure
 
@@ -59,16 +102,3 @@ desktop-music-player/
 ├── main.py                    # Entry point
 └── requirements.txt           # Dependencies
 ```
-
-## Media Key Support
-
-**Windows**: Works out-of-the-box with all keyboards using Qt shortcuts.
-
-**Linux**: Uses MPRIS2 D-Bus interface for GNOME, KDE, and other desktop environments. Shows track metadata in system media controls.
-
-## Development
-
-- **Architecture**: MVVM pattern with signal/slot connections
-- **Concurrency**: Audio processing runs in worker threads
-- **Code Style**: PEP8, type hints required
-- **UI Styling**: QSS (Qt stylesheets) with custom colors and fonts
