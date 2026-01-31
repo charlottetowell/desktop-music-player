@@ -6,6 +6,7 @@ Builds a standalone executable with all dependencies bundled
 
 import sys
 from pathlib import Path
+from PyInstaller.utils.hooks import collect_data_files, collect_submodules, collect_dynamic_libs
 
 block_cipher = None
 
@@ -15,21 +16,24 @@ datas = [
     ('assets/fonts', 'assets/fonts'),
 ]
 
+# Collect PySide6 data files and plugins
+datas += collect_data_files('PySide6')
+
+# Collect dynamic libraries
+binaries = []
+binaries += collect_dynamic_libs('PySide6')
+
 # Hidden imports for dynamic modules
 hiddenimports = [
-    'PySide6',
-    'PySide6.QtCore',
-    'PySide6.QtGui',
-    'PySide6.QtWidgets',
-    'PySide6.QtMultimedia',
-    'PySide6.QtSvg',
-    'shiboken6',
     'miniaudio',
     'numpy',
     'soundfile',
     'mutagen',
-    '_soundfile_data',
 ]
+
+# Collect all PySide6 submodules
+hiddenimports += collect_submodules('PySide6')
+hiddenimports += collect_submodules('shiboken6')
 
 # Platform-specific imports
 if sys.platform == 'win32':
@@ -40,7 +44,7 @@ elif sys.platform == 'linux':
 a = Analysis(
     ['main.py'],
     pathex=[],
-    binaries=[],
+    binaries=binaries,
     datas=datas,
     hiddenimports=hiddenimports,
     hookspath=[],
