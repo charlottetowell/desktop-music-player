@@ -1,5 +1,5 @@
 """
-Audio visualizer widget using librosa for real-time waveform visualization
+Audio visualizer widget for real-time waveform visualization
 """
 
 from typing import Optional
@@ -7,7 +7,7 @@ import numpy as np
 from PySide6.QtWidgets import QWidget
 from PySide6.QtCore import Qt, QTimer, Signal, QThread, QPointF
 from PySide6.QtGui import QPainter, QLinearGradient, QColor, QPen, QPainterPath
-import librosa
+import soundfile as sf
 from core.audio_scanner import AudioTrack
 
 
@@ -31,11 +31,23 @@ class AudioAnalysisWorker(QThread):
             return
             
         try:
-            # Load audio file with librosa
-            y, sr = librosa.load(str(self.track.file_path), sr=22050, duration=None, mono=True)
+            # Load audio file with soundfile
+            y, sr = sf.read(str(self.track.file_path), dtype='float32', always_2d=False)
+            
+            # Convert stereo to mono if needed
+            if len(y.shape) > 1:
+                y = np.mean(y, axis=1)
+            
+            # Resample to 22050 Hz for consistent processing
+            if sr != 22050:
+                # Simple decimation/interpolation for resampling
+                target_length = int(len(y) * 22050 / sr)
+                indices = np.linspace(0, len(y) - 1, target_length)
+                y = np.interp(indices, np.arange(len(y)), y)
+                sr = 22050
             
             # Emit the full audio data
-            self.analysis_ready.emit(y, sr)
+            self.analysis_ready.emit(y, float(sr))
             
         except Exception as e:
             print(f"Audio analysis error: {e}")

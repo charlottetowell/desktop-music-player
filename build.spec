@@ -22,9 +22,9 @@ hiddenimports = [
     'PySide6.QtWidgets',
     'miniaudio',
     'numpy',
-    'librosa',
     'soundfile',
     'mutagen',
+    '_soundfile_data',
 ]
 
 # Platform-specific imports
